@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+}
+
+model CompanySettings {
+  id            Int      @id @default(1)
+  name          String
+  address       String?
+  phone         String?
+  email         String?
+  website       String?
+  taxId         String?
+  bankDetails   String?
+  logoPath      String?
+  letterheadPath String?
+  currency      String   @default("NGN")
+  updatedAt     DateTime @updatedAt
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  documents Document[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  unitPrice   Decimal  @db.Decimal(14, 2)
+  unit        String?
+  createdAt   DateTime @default(now())
+}
+
+enum DocumentType {
+  QUOTATION
+  INVOICE
+  WAYBILL
+  LETTER
+}
+
+enum DocumentStatus {
+  DRAFT
+  ISSUED
+  PAID
+  CANCELLED
+}
+
+model Document {
+  id         String         @id @default(cuid())
+  number     String         @unique
+  type       DocumentType
+  status     DocumentStatus @default(DRAFT)
+  clientId   String?
+  client     Client?        @relation(fields: [clientId], references: [id])
+  issueDate  DateTime       @default(now())
+  dueDate    DateTime?
+  notes      String?
+  subtotal   Decimal        @db.Decimal(14, 2) @default(0)
+  taxRate    Decimal        @db.Decimal(5, 2)  @default(0)
+  taxAmount  Decimal        @db.Decimal(14, 2) @default(0)
+  total      Decimal        @db.Decimal(14, 2) @default(0)
+  data       Json?
+  items      DocumentItem[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+model DocumentItem {
+  id           String   @id @default(cuid())
+  documentId   String
+  document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  description  String
+  quantity     Decimal  @db.Decimal(14, 2)
+  unitPrice    Decimal  @db.Decimal(14, 2)
+  amount       Decimal  @db.Decimal(14, 2)
+  model        String?
+  unit         String?
+  serialNumber String?
+  remarks      String?
+  position     Int      @default(0)
+}
