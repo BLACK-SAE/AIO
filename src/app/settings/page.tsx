@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
+
+async function uploadIfPresent(file: File | null, prefix: string): Promise<string | undefined> {
+  if (!file || file.size === 0) return undefined;
+  const ext = file.name.split(".").pop() || "png";
+  const fname = `${prefix}-${Date.now()}.${ext}`;
+  const blob = await put(fname, file, { access: "public", addRandomSuffix: false });
+  return blob.url;
+}
 
 async function save(formData: FormData) {
   "use server";
@@ -20,35 +27,10 @@ async function save(formData: FormData) {
   const taxId = String(formData.get("taxId") || "");
   const bankDetails = String(formData.get("bankDetails") || "");
   const currency = String(formData.get("currency") || "NGN");
-  const logo = formData.get("logo") as File | null;
-  const letterhead = formData.get("letterhead") as File | null;
-  const signature = formData.get("signature") as File | null;
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadDir, { recursive: true });
-
-  let logoPath: string | undefined;
-  let letterheadPath: string | undefined;
-  let signaturePath: string | undefined;
-
-  if (logo && logo.size > 0) {
-    const ext = logo.name.split(".").pop() || "png";
-    const fname = `logo-${Date.now()}.${ext}`;
-    await writeFile(path.join(uploadDir, fname), Buffer.from(await logo.arrayBuffer()));
-    logoPath = `/uploads/${fname}`;
-  }
-  if (letterhead && letterhead.size > 0) {
-    const ext = letterhead.name.split(".").pop() || "png";
-    const fname = `letterhead-${Date.now()}.${ext}`;
-    await writeFile(path.join(uploadDir, fname), Buffer.from(await letterhead.arrayBuffer()));
-    letterheadPath = `/uploads/${fname}`;
-  }
-  if (signature && signature.size > 0) {
-    const ext = signature.name.split(".").pop() || "png";
-    const fname = `signature-${Date.now()}.${ext}`;
-    await writeFile(path.join(uploadDir, fname), Buffer.from(await signature.arrayBuffer()));
-    signaturePath = `/uploads/${fname}`;
-  }
+  const logoPath = await uploadIfPresent(formData.get("logo") as File | null, "logo");
+  const letterheadPath = await uploadIfPresent(formData.get("letterhead") as File | null, "letterhead");
+  const signaturePath = await uploadIfPresent(formData.get("signature") as File | null, "signature");
 
   await prisma.companySettings.upsert({
     where: { id: 1 },

@@ -9,7 +9,30 @@ function money(v: any, cur = "NGN") {
   return `${cur} ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+async function loadImage(storedPath: string | null | undefined): Promise<Buffer | null> {
+  if (!storedPath) return null;
+  try {
+    if (/^https?:\/\//i.test(storedPath)) {
+      const res = await fetch(storedPath);
+      if (!res.ok) return null;
+      return Buffer.from(await res.arrayBuffer());
+    }
+    const fsPath = path.join(process.cwd(), "public", storedPath);
+    if (!fs.existsSync(fsPath)) return null;
+    return fs.readFileSync(fsPath);
+  } catch {
+    return null;
+  }
+}
+
 export async function renderDocumentPdf(doc: any, company: any): Promise<Buffer> {
+  // Pre-load images (since PDFKit setup is synchronous)
+  const [logoBuf, letterheadBuf, signatureBuf] = await Promise.all([
+    loadImage(company?.logoPath),
+    loadImage(company?.letterheadPath),
+    loadImage(company?.signaturePath)
+  ]);
+
   return await new Promise<Buffer>((resolve, reject) => {
     try {
       const d = new PDFDocument({ size: "A4", margin: 40, pdfVersion: "1.7" });
@@ -22,14 +45,12 @@ export async function renderDocumentPdf(doc: any, company: any): Promise<Buffer>
       const isWaybill = doc.type === "WAYBILL";
       const isQuotation = doc.type === "QUOTATION";
       const extra = doc.data || {};
-      const logoFs = company?.logoPath ? path.join(process.cwd(), "public", company.logoPath) : null;
-      const letterheadFs = company?.letterheadPath ? path.join(process.cwd(), "public", company.letterheadPath) : null;
 
       // === LETTERHEAD (top band) ===
       let headerOffset = 0;
-      if (letterheadFs && fs.existsSync(letterheadFs)) {
+      if (letterheadBuf) {
         const drawLetterhead = () => {
-          try { d.image(letterheadFs, 0, 0, { width: 595 }); } catch {}
+          try { d.image(letterheadBuf, 0, 0, { width: 595 }); } catch {}
         };
         drawLetterhead();
         d.on("pageAdded", drawLetterhead);
@@ -37,11 +58,11 @@ export async function renderDocumentPdf(doc: any, company: any): Promise<Buffer>
       }
 
       if (isWaybill) {
-        renderWaybillPdf(d, doc, company, extra, logoFs, headerOffset);
+        renderWaybillPdf(d, doc, company, extra, logoBuf, headerOffset);
       } else if (doc.type === "LETTER") {
-        renderLetterPdf(d, doc, company, extra, logoFs, headerOffset);
+        renderLetterPdf(d, doc, company, extra, logoBuf, signatureBuf, headerOffset);
       } else {
-        renderInvoiceQuotationPdf(d, doc, company, extra, logoFs, headerOffset, cur, isQuotation);
+        renderInvoiceQuotationPdf(d, doc, company, extra, logoBuf, headerOffset, cur, isQuotation);
       }
 
       d.end();
@@ -49,7 +70,7 @@ export async function renderDocumentPdf(doc: any, company: any): Promise<Buffer>
   });
 }
 
-function renderWaybillPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoFs: string | null, headerOffset: number) {
+function renderWaybillPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, headerOffset: number) {
   const pageLeft = 40;
   const pageRight = 555;
   const pageW = pageRight - pageLeft;
@@ -59,12 +80,12 @@ function renderWaybillPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: 
   const rightX = 320;
 
   let actualLogoH = 0;
-  if (logoFs && fs.existsSync(logoFs)) {
+  if (logoBuf) {
     try {
-      const img: any = (d as any).openImage(logoFs);
+      const img: any = (d as any).openImage(logoBuf);
       const scale = Math.min(160 / img.width, 80 / img.height);
       actualLogoH = img.height * scale;
-      d.image(logoFs, pageLeft, headerTop, { fit: [160, 80] });
+      d.image(logoBuf, pageLeft, headerTop, { fit: [160, 80] });
     } catch {}
   } else {
     d.fontSize(14).font("Helvetica-Bold").text(company?.name || "", pageLeft, headerTop);
@@ -228,18 +249,18 @@ function renderWaybillPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: 
   );
 }
 
-function renderInvoiceQuotationPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoFs: string | null, headerOffset: number, cur: string, isQuotation: boolean) {
+function renderInvoiceQuotationPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, headerOffset: number, cur: string, isQuotation: boolean) {
   // === HEADER ===
   const headerTop = 10 + headerOffset;
   const rightX = 320;
 
   let actualLogoH = 0;
-  if (logoFs && fs.existsSync(logoFs)) {
+  if (logoBuf) {
     try {
-      const img: any = (d as any).openImage(logoFs);
+      const img: any = (d as any).openImage(logoBuf);
       const scale = Math.min(200 / img.width, 200 / img.height);
       actualLogoH = img.height * scale;
-      d.image(logoFs, 40, headerTop, { fit: [200, 200] });
+      d.image(logoBuf, 40, headerTop, { fit: [200, 200] });
     } catch {}
   } else {
     d.fontSize(14).font("Helvetica-Bold").text(company?.name || "", 40, headerTop);
@@ -381,7 +402,7 @@ function renderInvoiceQuotationPdf(d: PDFKit.PDFDocument, doc: any, company: any
   );
 }
 
-function renderLetterPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoFs: string | null, headerOffset: number) {
+function renderLetterPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, signatureBuf: Buffer | null, headerOffset: number) {
   const pageLeft = 40;
   const pageRight = 555;
   const pageW = pageRight - pageLeft;
@@ -390,12 +411,12 @@ function renderLetterPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: a
   const headerTop = 10 + headerOffset;
 
   let actualLogoH = 0;
-  if (logoFs && fs.existsSync(logoFs)) {
+  if (logoBuf) {
     try {
-      const img: any = (d as any).openImage(logoFs);
+      const img: any = (d as any).openImage(logoBuf);
       const scale = Math.min(160 / img.width, 80 / img.height);
       actualLogoH = img.height * scale;
-      d.image(logoFs, pageLeft, headerTop, { fit: [160, 80] });
+      d.image(logoBuf, pageLeft, headerTop, { fit: [160, 80] });
     } catch {}
   } else {
     d.fontSize(14).font("Helvetica-Bold").text(company?.name || "", pageLeft, headerTop);
@@ -462,13 +483,12 @@ function renderLetterPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: a
   curY = d.y + 8;
 
   // Signature image (if available)
-  const signatureFs = company?.signaturePath ? path.join(process.cwd(), "public", company.signaturePath) : null;
-  if (signatureFs && fs.existsSync(signatureFs)) {
+  if (signatureBuf) {
     try {
-      const img: any = (d as any).openImage(signatureFs);
+      const img: any = (d as any).openImage(signatureBuf);
       const scale = Math.min(150 / img.width, 60 / img.height);
       const sigH = img.height * scale;
-      d.image(signatureFs, pageLeft, curY, { fit: [150, 60] });
+      d.image(signatureBuf, pageLeft, curY, { fit: [150, 60] });
       curY += sigH + 2;
     } catch {
       curY += 40;
