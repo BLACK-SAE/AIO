@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { DocumentDraftSchema } from "@/lib/types";
 import { nextDocumentNumber } from "@/lib/numbering";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const parsed = DocumentDraftSchema.safeParse(body);

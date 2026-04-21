@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { llmJson } from "@/lib/llm";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   const { prompt, docType } = await req.json();
   const type = (docType || "INVOICE") as "INVOICE" | "QUOTATION" | "WAYBILL" | "LETTER";

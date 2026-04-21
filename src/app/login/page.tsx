@@ -1,11 +1,19 @@
 "use client";
-import { useState, useRef, useEffect, KeyboardEvent, ClipboardEvent } from "react";
+import { useState, useRef, useEffect, KeyboardEvent, ClipboardEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Lock } from "lucide-react";
 
 const PIN_LENGTH = 6;
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
   const r = useRouter();
   const sp = useSearchParams();
   const [digits, setDigits] = useState<string[]>(Array(PIN_LENGTH).fill(""));
