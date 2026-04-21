@@ -22,12 +22,14 @@ async function save(formData: FormData) {
   const currency = String(formData.get("currency") || "NGN");
   const logo = formData.get("logo") as File | null;
   const letterhead = formData.get("letterhead") as File | null;
+  const signature = formData.get("signature") as File | null;
 
   const uploadDir = path.join(process.cwd(), "public", "uploads");
   await mkdir(uploadDir, { recursive: true });
 
   let logoPath: string | undefined;
   let letterheadPath: string | undefined;
+  let signaturePath: string | undefined;
 
   if (logo && logo.size > 0) {
     const ext = logo.name.split(".").pop() || "png";
@@ -41,11 +43,17 @@ async function save(formData: FormData) {
     await writeFile(path.join(uploadDir, fname), Buffer.from(await letterhead.arrayBuffer()));
     letterheadPath = `/uploads/${fname}`;
   }
+  if (signature && signature.size > 0) {
+    const ext = signature.name.split(".").pop() || "png";
+    const fname = `signature-${Date.now()}.${ext}`;
+    await writeFile(path.join(uploadDir, fname), Buffer.from(await signature.arrayBuffer()));
+    signaturePath = `/uploads/${fname}`;
+  }
 
   await prisma.companySettings.upsert({
     where: { id: 1 },
-    update: { name, address, phone, email, website, taxId, bankDetails, currency, ...(logoPath && { logoPath }), ...(letterheadPath && { letterheadPath }) },
-    create: { id: 1, name, address, phone, email, website, taxId, bankDetails, currency, logoPath, letterheadPath }
+    update: { name, address, phone, email, website, taxId, bankDetails, currency, ...(logoPath && { logoPath }), ...(letterheadPath && { letterheadPath }), ...(signaturePath && { signaturePath }) },
+    create: { id: 1, name, address, phone, email, website, taxId, bankDetails, currency, logoPath, letterheadPath, signaturePath }
   });
   revalidatePath("/settings");
 }
@@ -91,6 +99,10 @@ export default async function Settings() {
             <F l="Letterhead">
               <Input type="file" name="letterhead" accept="image/*" />
               {c?.letterheadPath && <img src={c.letterheadPath} alt="letterhead" className="h-20 mt-2 border rounded p-1 bg-white" />}
+            </F>
+            <F l="Signature (for letters)">
+              <Input type="file" name="signature" accept="image/*" />
+              {c?.signaturePath && <img src={c.signaturePath} alt="signature" className="h-20 mt-2 border rounded p-1 bg-white" />}
             </F>
           </CardContent>
         </Card>

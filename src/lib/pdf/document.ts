@@ -71,17 +71,8 @@ function renderWaybillPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: 
     actualLogoH = 20;
   }
 
-  // Company info (right side)
-  d.font("Helvetica-Bold").fontSize(11).fillColor("#111").text(company?.name || "", rightX, headerTop, { align: "right", width: pageRight - rightX });
-  d.font("Helvetica").fontSize(8).fillColor("#444");
-  let ry = d.y;
-  [company?.address, company?.phone, company?.email, company?.website].filter(Boolean).forEach((line) => {
-    d.text(String(line), rightX, ry, { align: "right", width: pageRight - rightX });
-    ry = d.y;
-  });
-
   // WAYBILL title bar
-  const titleBarY = Math.max(headerTop + actualLogoH, ry) + 12;
+  const titleBarY = headerTop + actualLogoH + 12;
   d.rect(pageLeft, titleBarY, pageW, 28).fillColor("#1a1a2e").fill();
   d.fontSize(18).font("Helvetica-Bold").fillColor("#ffffff")
     .text("WAYBILL", pageLeft, titleBarY + 6, { width: pageW, align: "center" });
@@ -254,27 +245,11 @@ function renderInvoiceQuotationPdf(d: PDFKit.PDFDocument, doc: any, company: any
     d.fontSize(14).font("Helvetica-Bold").text(company?.name || "", 40, headerTop);
   }
 
-  // company info (right)
-  d.font("Helvetica-Bold").fontSize(12).text(company?.name || "", rightX, headerTop, { align: "right", width: 215 });
-  d.font("Helvetica").fontSize(9);
-  let rightY = d.y;
-  const rightLines = [
-    company?.address,
-    company?.phone,
-    company?.email,
-    company?.website,
-    company?.taxId ? `Tax ID: ${company.taxId}` : null
-  ].filter(Boolean);
-  rightLines.forEach((line) => {
-    d.text(String(line), rightX, rightY, { align: "right", width: 215 });
-    rightY = d.y;
-  });
-
-  // Title sits 25pt below the actual rendered logo
+  // Title positioned at top right, aligned with logo
+  d.fontSize(28).font("Helvetica-Bold").fillColor("#111")
+    .text(TITLES[doc.type], rightX, headerTop + 50, { align: "right", width: 555 - rightX });
   const logoBottom = headerTop + (actualLogoH || 200);
   const titleY = logoBottom + 25;
-  d.fontSize(22).font("Helvetica-Bold").fillColor("#111")
-    .text(TITLES[doc.type], 40, titleY);
   d.fillColor("#111").font("Helvetica").fontSize(10);
 
   // === META ROW ===
@@ -311,51 +286,78 @@ function renderInvoiceQuotationPdf(d: PDFKit.PDFDocument, doc: any, company: any
   });
 
   // === ITEMS TABLE ===
-  const sectionY = Math.max(billY, mY) + 10;
+  const sectionY = Math.max(billY, mY) + 14;
   const headingText = (extra.itemsHeading && String(extra.itemsHeading).trim()) || "ITEMS";
-  d.fontSize(11).font("Helvetica-Bold").fillColor("#111").text(headingText.toUpperCase(), 40, sectionY);
-  const tableTop = sectionY + 14;
-  d.moveTo(40, tableTop).lineTo(555, tableTop).strokeColor("#ddd").stroke();
+  d.fontSize(10).font("Helvetica-Bold").fillColor("#1a1a2e").text(headingText.toUpperCase(), 40, sectionY, { characterSpacing: 1.5 });
+  const tableTop = sectionY + 18;
 
-  const headerH = 24;
-  const headerY = tableTop + 7;
-  d.rect(40, tableTop, 515, headerH).fillColor("#f3f4f6").fill();
-  d.fillColor("#111").font("Helvetica-Bold").fontSize(9);
+  // Column layout: Description | Qty | Unit Price | Amount
+  const cols = {
+    desc: { x: 40,  w: 260 },
+    qty:  { x: 300, w: 45 },
+    price: { x: 345, w: 105 },
+    amt:  { x: 450, w: 105 }
+  };
 
-  d.text("DESCRIPTION", 46, headerY);
-  d.text("QTY", 300, headerY, { width: 50, align: "right" });
-  d.text("UNIT PRICE", 355, headerY, { width: 90, align: "right" });
-  d.text("AMOUNT", 455, headerY, { width: 95, align: "right" });
+  // Dark header bar
+  const headerH = 26;
+  d.rect(40, tableTop, 515, headerH).fillColor("#1a1a2e").fill();
+  d.fillColor("#ffffff").font("Helvetica-Bold").fontSize(9);
+  const headerY = tableTop + 9;
+  d.text("DESCRIPTION", cols.desc.x + 8, headerY, { width: cols.desc.w - 8, characterSpacing: 0.8 });
+  d.text("QTY", cols.qty.x, headerY, { width: cols.qty.w, align: "center", characterSpacing: 0.8 });
+  d.text("UNIT PRICE", cols.price.x, headerY, { width: cols.price.w - 6, align: "right", characterSpacing: 0.8 });
+  d.text("AMOUNT", cols.amt.x, headerY, { width: cols.amt.w - 6, align: "right", characterSpacing: 0.8 });
 
-  d.font("Helvetica").fontSize(11).fillColor("#111");
-  let rowY = tableTop + headerH + 6;
+  let rowY = tableTop + headerH;
 
   for (let i = 0; i < doc.items.length; i++) {
     const it = doc.items[i];
-    d.fontSize(11);
-    const descH = d.heightOfString(String(it.description), { width: 250 });
-    const rowH = Math.max(descH, 14) + 8;
-    d.text(String(it.description), 46, rowY, { width: 250 });
-    d.text(String(it.quantity), 300, rowY, { width: 50, align: "right" });
-    d.text(money(it.unitPrice, cur), 355, rowY, { width: 90, align: "right" });
-    d.text(money(it.amount, cur), 455, rowY, { width: 95, align: "right" });
-    rowY += rowH;
-    d.moveTo(40, rowY - 4).lineTo(555, rowY - 4).strokeColor("#ddd").lineWidth(0.5).stroke();
-  }
-  d.moveTo(40, rowY).lineTo(555, rowY).strokeColor("#ddd").stroke();
+    const descH = d.heightOfString(String(it.description), { width: cols.desc.w - 8 });
+    const rowH = Math.max(descH, 14) + 14;
 
-  // === TOTALS ===
-  const totalsY = rowY + 14;
-  const lbl = 355, val = 455, w = 95;
-  d.font("Helvetica").fontSize(10);
-  d.text("Subtotal", lbl, totalsY, { width: 90, align: "right" });
-  d.text(money(doc.subtotal, cur), val, totalsY, { width: w, align: "right" });
-  d.text(`Tax (${String(doc.taxRate)}%)`, lbl, totalsY + 16, { width: 90, align: "right" });
-  d.text(money(doc.taxAmount, cur), val, totalsY + 16, { width: w, align: "right" });
-  d.moveTo(lbl, totalsY + 34).lineTo(val + w, totalsY + 34).strokeColor("#333").stroke();
-  d.font("Helvetica-Bold").fontSize(12);
-  d.text("Total", lbl, totalsY + 40, { width: 90, align: "right" });
-  d.text(money(doc.total, cur), val, totalsY + 40, { width: w, align: "right" });
+    // Alternating row background
+    if (i % 2 === 0) {
+      d.rect(40, rowY, 515, rowH).fillColor("#fafafa").fill();
+    }
+
+    d.font("Helvetica").fontSize(10).fillColor("#111");
+    // Description
+    d.text(String(it.description), cols.desc.x + 8, rowY + 7, { width: cols.desc.w - 8 });
+    // Qty
+    d.text(String(it.quantity), cols.qty.x, rowY + 7, { width: cols.qty.w, align: "center" });
+    // Unit price
+    d.text(money(it.unitPrice, cur), cols.price.x, rowY + 7, { width: cols.price.w - 6, align: "right" });
+    // Amount
+    d.font("Helvetica-Bold").text(money(it.amount, cur), cols.amt.x, rowY + 7, { width: cols.amt.w - 6, align: "right" });
+
+    rowY += rowH;
+  }
+
+  // Bottom border of table
+  d.moveTo(40, rowY).lineTo(555, rowY).strokeColor("#1a1a2e").lineWidth(1.5).stroke();
+
+  // === TOTALS (stylish box on the right) ===
+  const totalsBoxX = 315;
+  const totalsBoxW = 240;
+  const totalsY = rowY + 18;
+  const lineH = 18;
+
+  d.font("Helvetica").fontSize(10).fillColor("#444");
+  d.text("Subtotal", totalsBoxX, totalsY, { width: 120, align: "left" });
+  d.fillColor("#111").text(money(doc.subtotal, cur), totalsBoxX + 120, totalsY, { width: totalsBoxW - 120, align: "right" });
+
+  d.fillColor("#444").text(`Tax (${String(doc.taxRate)}%)`, totalsBoxX, totalsY + lineH, { width: 120, align: "left" });
+  d.fillColor("#111").text(money(doc.taxAmount, cur), totalsBoxX + 120, totalsY + lineH, { width: totalsBoxW - 120, align: "right" });
+
+  // Total row with highlighted background
+  const totalRowY = totalsY + lineH * 2 + 6;
+  d.rect(totalsBoxX, totalRowY, totalsBoxW, 26).fillColor("#1a1a2e").fill();
+  d.fillColor("#ffffff").font("Helvetica-Bold").fontSize(11);
+  d.text("TOTAL", totalsBoxX + 10, totalRowY + 8, { width: 120, align: "left", characterSpacing: 1 });
+  d.fontSize(13).text(money(doc.total, cur), totalsBoxX + 120, totalRowY + 7, { width: totalsBoxW - 130, align: "right" });
+  d.fillColor("#111");
+  rowY = totalRowY + 26;
 
   // === NOTES / PAYMENT ===
   let footY = rowY + 90;
@@ -384,9 +386,8 @@ function renderLetterPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: a
   const pageRight = 555;
   const pageW = pageRight - pageLeft;
 
-  // === HEADER: Logo + Company Info ===
+  // === HEADER: Logo only ===
   const headerTop = 10 + headerOffset;
-  const rightX = 320;
 
   let actualLogoH = 0;
   if (logoFs && fs.existsSync(logoFs)) {
@@ -401,17 +402,8 @@ function renderLetterPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: a
     actualLogoH = 20;
   }
 
-  // Company info (right side)
-  d.font("Helvetica-Bold").fontSize(11).fillColor("#111").text(company?.name || "", rightX, headerTop, { align: "right", width: pageRight - rightX });
-  d.font("Helvetica").fontSize(8).fillColor("#444");
-  let ry = d.y;
-  [company?.address, company?.phone, company?.email, company?.website].filter(Boolean).forEach((line) => {
-    d.text(String(line), rightX, ry, { align: "right", width: pageRight - rightX });
-    ry = d.y;
-  });
-
   // Divider line
-  const dividerY = Math.max(headerTop + actualLogoH, ry) + 10;
+  const dividerY = headerTop + actualLogoH + 10;
   d.moveTo(pageLeft, dividerY).lineTo(pageRight, dividerY).strokeColor("#333").lineWidth(1).stroke();
 
   // === DATE ===
@@ -467,7 +459,23 @@ function renderLetterPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: a
   const closing = extra.closing || "Yours sincerely";
   d.font("Helvetica").fontSize(10).fillColor("#111");
   d.text(closing + ",", pageLeft, curY, { width: pageW });
-  curY = d.y + 40;
+  curY = d.y + 8;
+
+  // Signature image (if available)
+  const signatureFs = company?.signaturePath ? path.join(process.cwd(), "public", company.signaturePath) : null;
+  if (signatureFs && fs.existsSync(signatureFs)) {
+    try {
+      const img: any = (d as any).openImage(signatureFs);
+      const scale = Math.min(150 / img.width, 60 / img.height);
+      const sigH = img.height * scale;
+      d.image(signatureFs, pageLeft, curY, { fit: [150, 60] });
+      curY += sigH + 2;
+    } catch {
+      curY += 40;
+    }
+  } else {
+    curY += 40;
+  }
 
   // Signature line
   d.moveTo(pageLeft, curY).lineTo(pageLeft + 180, curY).strokeColor("#666").lineWidth(0.5).stroke();

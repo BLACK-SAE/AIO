@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import ClientRow from "@/components/ClientRow";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +21,30 @@ async function add(formData: FormData) {
   revalidatePath("/clients");
 }
 
+async function update(id: string, data: { name: string; email: string; phone: string; address: string }) {
+  "use server";
+  await prisma.client.update({
+    where: { id },
+    data: {
+      name: data.name,
+      email: data.email || null,
+      phone: data.phone || null,
+      address: data.address || null
+    }
+  });
+  revalidatePath("/clients");
+}
+
+async function remove(id: string) {
+  "use server";
+  await prisma.client.delete({ where: { id } });
+  revalidatePath("/clients");
+}
+
 export default async function Clients() {
   const clients = await prisma.client.findMany({ orderBy: { name: "asc" } });
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-5xl">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
         <p className="text-muted-foreground text-sm">{clients.length} total</p>
@@ -42,18 +63,30 @@ export default async function Clients() {
       <Card>
         <Table>
           <TableHeader>
-            <TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Phone</TableHead><TableHead>Address</TableHead></TableRow>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead className="w-32 text-right">Actions</TableHead>
+            </TableRow>
           </TableHeader>
           <TableBody>
             {clients.map((c) => (
-              <TableRow key={c.id}>
-                <TableCell className="font-medium">{c.name}</TableCell>
-                <TableCell>{c.email}</TableCell>
-                <TableCell>{c.phone}</TableCell>
-                <TableCell>{c.address}</TableCell>
-              </TableRow>
+              <ClientRow
+                key={c.id}
+                client={{
+                  id: c.id,
+                  name: c.name,
+                  email: c.email || "",
+                  phone: c.phone || "",
+                  address: c.address || ""
+                }}
+                updateAction={update}
+                deleteAction={remove}
+              />
             ))}
-            {clients.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No clients yet.</TableCell></TableRow>}
+            {clients.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No clients yet.</TableCell></TableRow>}
           </TableBody>
         </Table>
       </Card>

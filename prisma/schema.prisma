@@ -26,6 +26,7 @@ model CompanySettings {
   bankDetails   String?
   logoPath      String?
   letterheadPath String?
+  signaturePath String?
   currency      String   @default("NGN")
   updatedAt     DateTime @updatedAt
 }
