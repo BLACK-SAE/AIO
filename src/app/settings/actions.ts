@@ -23,6 +23,7 @@ export async function saveCompany(formData: FormData) {
   const taxId = String(formData.get("taxId") || "");
   const bankDetails = String(formData.get("bankDetails") || "");
   const currency = String(formData.get("currency") || "NGN");
+  const letterheadOffset = Number(formData.get("letterheadOffset") || 0);
 
   const logoPath = await uploadIfPresent(formData.get("logo") as File | null, "logo");
   const letterheadPath = await uploadIfPresent(formData.get("letterhead") as File | null, "letterhead");
@@ -32,7 +33,7 @@ export async function saveCompany(formData: FormData) {
     await prisma.company.update({
       where: { id },
       data: {
-        name, address, phone, email, website, taxId, bankDetails, currency,
+        name, address, phone, email, website, taxId, bankDetails, currency, letterheadOffset,
         ...(logoPath && { logoPath }),
         ...(letterheadPath && { letterheadPath }),
         ...(signaturePath && { signaturePath })
@@ -40,7 +41,7 @@ export async function saveCompany(formData: FormData) {
     });
   } else {
     const created = await prisma.company.create({
-      data: { name, address, phone, email, website, taxId, bankDetails, currency, logoPath, letterheadPath, signaturePath }
+      data: { name, address, phone, email, website, taxId, bankDetails, currency, letterheadOffset, logoPath, letterheadPath, signaturePath }
     });
     const count = await prisma.company.count();
     if (count === 1) {

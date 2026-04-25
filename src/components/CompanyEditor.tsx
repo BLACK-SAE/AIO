@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import OffsetSlider from "@/components/OffsetSlider";
 
 type Company = {
   id: string;
@@ -16,6 +17,7 @@ type Company = {
   currency: string;
   logoPath: string | null;
   letterheadPath: string | null;
+  letterheadOffset: number;
   signaturePath: string | null;
 };
 
@@ -62,6 +64,9 @@ export default function CompanyEditor({
           <F l="Letterhead">
             <Input type="file" name="letterhead" accept="image/*" />
             {c?.letterheadPath && <img src={c.letterheadPath} alt="letterhead" className="h-20 mt-2 border rounded p-1 bg-white" />}
+          </F>
+          <F l="Letterhead Top Offset">
+            <OffsetSlider name="letterheadOffset" defaultValue={c?.letterheadOffset || 0} />
           </F>
           <F l="Signature (for letters)">
             <Input type="file" name="signature" accept="image/*" />

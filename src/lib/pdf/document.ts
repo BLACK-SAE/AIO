@@ -54,7 +54,7 @@ export async function renderDocumentPdf(doc: any, company: any): Promise<Buffer>
         };
         drawLetterhead();
         d.on("pageAdded", drawLetterhead);
-        headerOffset = 10;
+        headerOffset = 10 + (Number(company?.letterheadOffset) || 0);
       }
 
       if (isWaybill) {

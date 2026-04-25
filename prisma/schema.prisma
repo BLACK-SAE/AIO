@@ -26,6 +26,7 @@ model Company {
   bankDetails    String?
   logoPath       String?
   letterheadPath String?
+  letterheadOffset Int    @default(0)
   signaturePath  String?
   currency       String   @default("NGN")
   isActive       Boolean  @default(false)
