@@ -1,102 +1,114 @@
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
-import { put } from "@vercel/blob";
+import { redirect } from "next/navigation";
+import { getActiveCompany } from "@/lib/activeCompany";
+import { saveCompany, setActive, deleteCompany } from "./actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import CompanyEditor from "@/components/CompanyEditor";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-async function uploadIfPresent(file: File | null, prefix: string): Promise<string | undefined> {
-  if (!file || file.size === 0) return undefined;
-  const ext = file.name.split(".").pop() || "png";
-  const fname = `${prefix}-${Date.now()}.${ext}`;
-  const blob = await put(fname, file, { access: "public", addRandomSuffix: false });
-  return blob.url;
-}
+export default async function Settings({ searchParams }: { searchParams: Promise<{ edit?: string; new?: string }> }) {
+  const sp = await searchParams;
+  const editId = sp.edit;
+  const isNew = sp.new !== undefined;
 
-async function save(formData: FormData) {
-  "use server";
-  const name = String(formData.get("name") || "");
-  const address = String(formData.get("address") || "");
-  const phone = String(formData.get("phone") || "");
-  const email = String(formData.get("email") || "");
-  const website = String(formData.get("website") || "");
-  const taxId = String(formData.get("taxId") || "");
-  const bankDetails = String(formData.get("bankDetails") || "");
-  const currency = String(formData.get("currency") || "NGN");
-
-  const logoPath = await uploadIfPresent(formData.get("logo") as File | null, "logo");
-  const letterheadPath = await uploadIfPresent(formData.get("letterhead") as File | null, "letterhead");
-  const signaturePath = await uploadIfPresent(formData.get("signature") as File | null, "signature");
-
-  await prisma.companySettings.upsert({
-    where: { id: 1 },
-    update: { name, address, phone, email, website, taxId, bankDetails, currency, ...(logoPath && { logoPath }), ...(letterheadPath && { letterheadPath }), ...(signaturePath && { signaturePath }) },
-    create: { id: 1, name, address, phone, email, website, taxId, bankDetails, currency, logoPath, letterheadPath, signaturePath }
-  });
-  revalidatePath("/settings");
-}
-
-export default async function Settings() {
-  const c = await prisma.companySettings.findUnique({ where: { id: 1 } });
-  return (
-    <div className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Company Settings</h1>
-        <p className="text-muted-foreground text-sm">These appear on every generated document.</p>
-      </div>
-      <form action={save}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Company Information</CardTitle>
-            <CardDescription>Identity and contact details</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <F l="Company Name"><Input name="name" defaultValue={c?.name || ""} required /></F>
-            <F l="Address"><Textarea name="address" defaultValue={c?.address || ""} rows={2} /></F>
-            <div className="grid grid-cols-2 gap-4">
-              <F l="Phone"><Input name="phone" defaultValue={c?.phone || ""} /></F>
-              <F l="Email"><Input name="email" defaultValue={c?.email || ""} /></F>
-              <F l="Website"><Input name="website" defaultValue={c?.website || ""} /></F>
-              <F l="Tax ID"><Input name="taxId" defaultValue={c?.taxId || ""} /></F>
-              <F l="Currency"><Input name="currency" defaultValue={c?.currency || "NGN"} /></F>
-            </div>
-            <F l="Bank / Payment Details"><Textarea name="bankDetails" defaultValue={c?.bankDetails || ""} rows={3} /></F>
-          </CardContent>
-        </Card>
-
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>Branding</CardTitle>
-            <CardDescription>Logo & letterhead images</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <F l="Logo">
-              <Input type="file" name="logo" accept="image/*" />
-              {c?.logoPath && <img src={c.logoPath} alt="logo" className="h-20 mt-2 border rounded p-1 bg-white" />}
-            </F>
-            <F l="Letterhead">
-              <Input type="file" name="letterhead" accept="image/*" />
-              {c?.letterheadPath && <img src={c.letterheadPath} alt="letterhead" className="h-20 mt-2 border rounded p-1 bg-white" />}
-            </F>
-            <F l="Signature (for letters)">
-              <Input type="file" name="signature" accept="image/*" />
-              {c?.signaturePath && <img src={c.signaturePath} alt="signature" className="h-20 mt-2 border rounded p-1 bg-white" />}
-            </F>
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-end mt-4">
-          <Button type="submit" size="lg">Save Settings</Button>
+  if (editId) {
+    const c = await prisma.company.findUnique({ where: { id: editId } });
+    if (!c) redirect("/settings");
+    return (
+      <div className="space-y-6 max-w-3xl">
+        <div className="flex items-center gap-3">
+          <Button asChild variant="ghost" size="sm"><Link href="/settings">← Back</Link></Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Edit Company</h1>
+          </div>
         </div>
-      </form>
+        <CompanyEditor company={c!} action={saveCompany} />
+      </div>
+    );
+  }
+
+  if (isNew) {
+    return (
+      <div className="space-y-6 max-w-3xl">
+        <div className="flex items-center gap-3">
+          <Button asChild variant="ghost" size="sm"><Link href="/settings">← Back</Link></Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">New Company</h1>
+          </div>
+        </div>
+        <CompanyEditor company={null} action={saveCompany} />
+      </div>
+    );
+  }
+
+  const companies = await prisma.company.findMany({ orderBy: { createdAt: "asc" } });
+  const active = await getActiveCompany();
+
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Companies</h1>
+          <p className="text-muted-foreground text-sm">
+            Manage company profiles. The active company is used when creating new documents.
+          </p>
+        </div>
+        <Button asChild><Link href="/settings?new">+ Add Company</Link></Button>
+      </div>
+
+      {companies.length === 0 && (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            No companies yet. Click <strong>+ Add Company</strong> to set one up.
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {companies.map((c) => {
+          const isActive = active?.id === c.id;
+          return (
+            <Card key={c.id} className={isActive ? "ring-2 ring-primary" : ""}>
+              <CardHeader>
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-lg">{c.name}</CardTitle>
+                  {isActive && <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">ACTIVE</span>}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex gap-2 items-start">
+                  {c.logoPath ? (
+                    <img src={c.logoPath} alt="logo" className="h-14 w-14 object-contain border rounded p-1 bg-white shrink-0" />
+                  ) : (
+                    <div className="h-14 w-14 border rounded bg-muted shrink-0" />
+                  )}
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    {c.address && <div className="line-clamp-2">{c.address}</div>}
+                    {c.phone && <div>{c.phone}</div>}
+                    {c.email && <div>{c.email}</div>}
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button asChild variant="outline" size="sm"><Link href={`/settings?edit=${c.id}`}>Edit</Link></Button>
+                  {!isActive && (
+                    <form action={setActive}>
+                      <input type="hidden" name="id" value={c.id} />
+                      <Button type="submit" variant="secondary" size="sm">Set Active</Button>
+                    </form>
+                  )}
+                  <form action={deleteCompany}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <Button type="submit" variant="ghost" size="sm" className="text-destructive">Delete</Button>
+                  </form>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
-}
-
-function F({ l, children }: { l: string; children: React.ReactNode }) {
-  return <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">{l}</Label>{children}</div>;
 }

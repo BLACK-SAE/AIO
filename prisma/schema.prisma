@@ -15,20 +15,23 @@ model User {
   createdAt DateTime @default(now())
 }
 
-model CompanySettings {
-  id            Int      @id @default(1)
-  name          String
-  address       String?
-  phone         String?
-  email         String?
-  website       String?
-  taxId         String?
-  bankDetails   String?
-  logoPath      String?
+model Company {
+  id             String   @id @default(cuid())
+  name           String
+  address        String?
+  phone          String?
+  email          String?
+  website        String?
+  taxId          String?
+  bankDetails    String?
+  logoPath       String?
   letterheadPath String?
-  signaturePath String?
-  currency      String   @default("NGN")
-  updatedAt     DateTime @updatedAt
+  signaturePath  String?
+  currency       String   @default("NGN")
+  isActive       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  documents      Document[]
 }
 
 model Client {
@@ -71,6 +74,8 @@ model Document {
   status     DocumentStatus @default(DRAFT)
   clientId   String?
   client     Client?        @relation(fields: [clientId], references: [id])
+  companyId  String?
+  company    Company?       @relation(fields: [companyId], references: [id])
   issueDate  DateTime       @default(now())
   dueDate    DateTime?
   notes      String?

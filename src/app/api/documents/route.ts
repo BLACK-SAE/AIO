@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { DocumentDraftSchema } from "@/lib/types";
 import { nextDocumentNumber } from "@/lib/numbering";
+import { getActiveCompany } from "@/lib/activeCompany";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,9 @@ export async function POST(req: NextRequest) {
   const parsed = DocumentDraftSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const d = parsed.data;
+
+  const company = await getActiveCompany();
+  if (!company) return NextResponse.json({ error: "No active company. Set one up in Settings." }, { status: 400 });
 
   let client = await prisma.client.findFirst({ where: { name: d.clientName } });
   if (!client) {
@@ -32,6 +36,7 @@ export async function POST(req: NextRequest) {
       type: d.type,
       status: "ISSUED",
       clientId: client.id,
+      companyId: company.id,
       issueDate: new Date(d.issueDate),
       dueDate: d.dueDate ? new Date(d.dueDate) : null,
       notes: d.notes,

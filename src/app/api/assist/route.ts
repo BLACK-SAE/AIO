@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { llmJson } from "@/lib/llm";
+import { getActiveCompany } from "@/lib/activeCompany";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const { prompt, docType } = await req.json();
   const type = (docType || "INVOICE") as "INVOICE" | "QUOTATION" | "WAYBILL" | "LETTER";
-  const company = await prisma.companySettings.findUnique({ where: { id: 1 } });
+  const company = await getActiveCompany();
   const clients = await prisma.client.findMany({ take: 50 });
   const products = await prisma.product.findMany({ take: 100 });
 
