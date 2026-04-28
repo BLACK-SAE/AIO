@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import OffsetSlider from "@/components/OffsetSlider";
+import RemovableImage from "@/components/RemovableImage";
 
 type Company = {
   id: string;
@@ -19,6 +20,7 @@ type Company = {
   letterheadPath: string | null;
   letterheadOffset: number;
   signaturePath: string | null;
+  invoiceTemplate: string;
 };
 
 export default function CompanyEditor({
@@ -53,24 +55,34 @@ export default function CompanyEditor({
 
       <Card className="mt-4">
         <CardHeader>
+          <CardTitle>Invoice & Quotation Template</CardTitle>
+          <CardDescription>Pick a visual style for invoices and quotations.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TemplatePicker name="invoiceTemplate" defaultValue={c?.invoiceTemplate || "modern"} />
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
           <CardTitle>Branding</CardTitle>
           <CardDescription>Logo, letterhead & signature images</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <F l="Logo">
             <Input type="file" name="logo" accept="image/*" />
-            {c?.logoPath && <img src={c.logoPath} alt="logo" className="h-20 mt-2 border rounded p-1 bg-white" />}
+            {c?.logoPath && <RemovableImage src={c.logoPath} alt="logo" removeName="removeLogo" />}
           </F>
           <F l="Letterhead">
             <Input type="file" name="letterhead" accept="image/*" />
-            {c?.letterheadPath && <img src={c.letterheadPath} alt="letterhead" className="h-20 mt-2 border rounded p-1 bg-white" />}
+            {c?.letterheadPath && <RemovableImage src={c.letterheadPath} alt="letterhead" removeName="removeLetterhead" />}
           </F>
           <F l="Letterhead Top Offset">
             <OffsetSlider name="letterheadOffset" defaultValue={c?.letterheadOffset || 0} />
           </F>
           <F l="Signature (for letters)">
             <Input type="file" name="signature" accept="image/*" />
-            {c?.signaturePath && <img src={c.signaturePath} alt="signature" className="h-20 mt-2 border rounded p-1 bg-white" />}
+            {c?.signaturePath && <RemovableImage src={c.signaturePath} alt="signature" removeName="removeSignature" />}
           </F>
         </CardContent>
       </Card>
@@ -84,4 +96,94 @@ export default function CompanyEditor({
 
 function F({ l, children }: { l: string; children: React.ReactNode }) {
   return <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">{l}</Label>{children}</div>;
+}
+
+function TemplatePicker({ name, defaultValue }: { name: string; defaultValue: string }) {
+  const templates = [
+    { id: "modern", title: "Modern", desc: "Dark navy header, alternating rows, bold totals bar." },
+    { id: "classic", title: "Classic", desc: "Conservative double rules, gray accents, traditional invoice look." },
+    { id: "minimal", title: "Minimal", desc: "Lots of white space, light typography, subtle separators." }
+  ];
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {templates.map((t) => (
+        <label
+          key={t.id}
+          className="cursor-pointer relative border rounded-lg p-3 hover:border-primary transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-2 has-[:checked]:ring-primary/30"
+        >
+          <input
+            type="radio"
+            name={name}
+            value={t.id}
+            defaultChecked={defaultValue === t.id}
+            className="absolute top-3 right-3 accent-primary"
+          />
+          <TemplatePreview kind={t.id as "modern" | "classic" | "minimal"} />
+          <div className="font-medium text-sm">{t.title}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{t.desc}</div>
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function TemplatePreview({ kind }: { kind: "modern" | "classic" | "minimal" }) {
+  if (kind === "modern") {
+    return (
+      <div className="aspect-[4/3] bg-white border rounded mb-3 p-2 overflow-hidden">
+        <div className="flex justify-between items-start mb-2">
+          <div className="w-8 h-3 bg-muted rounded-sm" />
+          <div className="text-[8px] font-bold tracking-widest">QUOTATION</div>
+        </div>
+        <div className="h-[8px] bg-[#1a1a2e] mb-1" />
+        <div className="h-[4px] bg-[#fafafa] mb-0.5" />
+        <div className="h-[4px] bg-white mb-0.5 border-b border-muted/30" />
+        <div className="h-[4px] bg-[#fafafa] mb-0.5" />
+        <div className="h-[4px] bg-white mb-2 border-b border-muted/30" />
+        <div className="flex justify-end">
+          <div className="bg-[#1a1a2e] h-3 w-12 rounded-sm" />
+        </div>
+      </div>
+    );
+  }
+  if (kind === "classic") {
+    return (
+      <div className="aspect-[4/3] bg-white border rounded mb-3 p-2 overflow-hidden">
+        <div className="flex justify-between items-start mb-1">
+          <div className="w-8 h-3 bg-muted rounded-sm" />
+          <div className="text-[8px] font-bold tracking-[0.2em]">QUOTATION</div>
+        </div>
+        <div className="h-px bg-gray-700 mb-px" />
+        <div className="h-px bg-gray-700 mb-2" />
+        <div className="text-[6px] font-bold text-gray-700 tracking-widest mb-1">DESCRIPTION</div>
+        <div className="h-px bg-gray-700 mb-1" />
+        <div className="h-[3px] mb-1 border-b border-gray-200" />
+        <div className="h-[3px] mb-1 border-b border-gray-200" />
+        <div className="h-[3px] mb-2 border-b border-gray-700" />
+        <div className="flex justify-end">
+          <div className="text-[7px] font-bold border-y-2 border-double border-gray-700 px-2">TOTAL</div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="aspect-[4/3] bg-white border rounded mb-3 p-2 overflow-hidden">
+      <div className="flex justify-between items-start mb-2">
+        <div className="w-7 h-2.5 bg-muted rounded-sm" />
+        <div className="text-[10px] font-light tracking-[0.3em] text-gray-300">QUOTATION</div>
+      </div>
+      <div className="text-[5px] tracking-widest text-gray-400 mb-0.5">DESCRIPTION</div>
+      <div className="h-px bg-gray-900 mb-1" />
+      <div className="h-[3px] mb-px" />
+      <div className="h-px bg-gray-100" />
+      <div className="h-[3px] mb-px" />
+      <div className="h-px bg-gray-100" />
+      <div className="h-[3px]" />
+      <div className="h-px bg-gray-900 mt-1 mb-2" />
+      <div className="flex justify-end items-baseline gap-1">
+        <div className="text-[6px] tracking-widest text-gray-400">TOTAL</div>
+        <div className="text-[10px] font-bold">$</div>
+      </div>
+    </div>
+  );
 }

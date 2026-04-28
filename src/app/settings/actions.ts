@@ -24,24 +24,40 @@ export async function saveCompany(formData: FormData) {
   const bankDetails = String(formData.get("bankDetails") || "");
   const currency = String(formData.get("currency") || "NGN");
   const letterheadOffset = Number(formData.get("letterheadOffset") || 0);
+  const invoiceTemplateRaw = String(formData.get("invoiceTemplate") || "modern");
+  const invoiceTemplate = ["modern", "classic", "minimal"].includes(invoiceTemplateRaw) ? invoiceTemplateRaw : "modern";
 
-  const logoPath = await uploadIfPresent(formData.get("logo") as File | null, "logo");
-  const letterheadPath = await uploadIfPresent(formData.get("letterhead") as File | null, "letterhead");
-  const signaturePath = await uploadIfPresent(formData.get("signature") as File | null, "signature");
+  const removeLogo = formData.get("removeLogo") === "1";
+  const removeLetterhead = formData.get("removeLetterhead") === "1";
+  const removeSignature = formData.get("removeSignature") === "1";
+
+  const newLogoPath = await uploadIfPresent(formData.get("logo") as File | null, "logo");
+  const newLetterheadPath = await uploadIfPresent(formData.get("letterhead") as File | null, "letterhead");
+  const newSignaturePath = await uploadIfPresent(formData.get("signature") as File | null, "signature");
+
+  // Resolve final values: removal beats existing; new upload beats both
+  const logoPath = newLogoPath ?? (removeLogo ? null : undefined);
+  const letterheadPath = newLetterheadPath ?? (removeLetterhead ? null : undefined);
+  const signaturePath = newSignaturePath ?? (removeSignature ? null : undefined);
 
   if (id) {
     await prisma.company.update({
       where: { id },
       data: {
-        name, address, phone, email, website, taxId, bankDetails, currency, letterheadOffset,
-        ...(logoPath && { logoPath }),
-        ...(letterheadPath && { letterheadPath }),
-        ...(signaturePath && { signaturePath })
+        name, address, phone, email, website, taxId, bankDetails, currency, letterheadOffset, invoiceTemplate,
+        ...(logoPath !== undefined && { logoPath }),
+        ...(letterheadPath !== undefined && { letterheadPath }),
+        ...(signaturePath !== undefined && { signaturePath })
       }
     });
   } else {
     const created = await prisma.company.create({
-      data: { name, address, phone, email, website, taxId, bankDetails, currency, letterheadOffset, logoPath, letterheadPath, signaturePath }
+      data: {
+        name, address, phone, email, website, taxId, bankDetails, currency, letterheadOffset, invoiceTemplate,
+        logoPath: logoPath ?? null,
+        letterheadPath: letterheadPath ?? null,
+        signaturePath: signaturePath ?? null
+      }
     });
     const count = await prisma.company.count();
     if (count === 1) {
