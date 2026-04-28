@@ -4,10 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, FileDown } from "lucide-react";
+import { getActiveCompany } from "@/lib/activeCompany";
 
 export async function DocumentList({ type, newPath, title }: { type: "INVOICE" | "QUOTATION" | "WAYBILL" | "LETTER"; newPath: string; title: string }) {
+  const active = await getActiveCompany();
   const docs = await prisma.document.findMany({
-    where: { type }, orderBy: { createdAt: "desc" }, include: { client: true }
+    where: { type, ...(active ? { companyId: active.id } : {}) },
+    orderBy: { createdAt: "desc" },
+    include: { client: true }
   });
   const showTotal = type !== "WAYBILL" && type !== "LETTER";
   return (
@@ -15,7 +19,10 @@ export async function DocumentList({ type, newPath, title }: { type: "INVOICE" |
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-          <p className="text-muted-foreground text-sm">{docs.length} {docs.length === 1 ? "record" : "records"}</p>
+          <p className="text-muted-foreground text-sm">
+            {docs.length} {docs.length === 1 ? "record" : "records"}
+            {active && <> &middot; <span className="font-medium">{active.name.trim()}</span></>}
+          </p>
         </div>
         <Button asChild><Link href={newPath}><Plus className="h-4 w-4" /> New</Link></Button>
       </div>
