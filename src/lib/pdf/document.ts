@@ -670,205 +670,149 @@ function renderInvoiceQuotationMinimal(d: PDFKit.PDFDocument, doc: any, company:
   );
 }
 
-// ======================== ELEGANT (green / serif / project-bar) ========================
+// ======================== ELEGANT (CSS styling from quotation.html only) ========================
 function renderInvoiceQuotationElegant(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, headerOffset: number, cur: string, isQuotation: boolean) {
   const GREEN = "#2d6e3e";
-  const GREEN_SOFT = "#e7f0e9";
   const GREEN_SOFT_2 = "#eef4ef";
   const BLACK = "#111111";
   const TEXT = "#2b2b2b";
   const MUTED = "#8a8a8a";
   const LINE = "#e5e5e5";
 
-  const pageLeft = 40;
-  const pageRight = 555;
-  const pageW = pageRight - pageLeft;
-  const TITLE = TITLES[doc.type];
-
-  // === HEADER: logo (left), thin green rule below ===
+  // === HEADER ===
   const headerTop = 10 + headerOffset;
-  let logoH = 0;
+  const rightX = 320;
+
+  let actualLogoH = 0;
   if (logoBuf) {
     try {
       const img: any = (d as any).openImage(logoBuf);
-      const scale = Math.min(140 / img.width, 60 / img.height);
-      logoH = img.height * scale;
-      d.image(logoBuf, pageLeft, headerTop, { fit: [140, 60] });
+      const scale = Math.min(200 / img.width, 200 / img.height);
+      actualLogoH = img.height * scale;
+      d.image(logoBuf, 40, headerTop, { fit: [200, 200] });
     } catch {}
   } else {
-    d.font("Times-Bold").fontSize(14).fillColor(BLACK).text(company?.name || "", pageLeft, headerTop + 12);
-    logoH = 30;
-  }
-  const ruleY = headerTop + Math.max(logoH, 50) + 8;
-  d.moveTo(pageLeft, ruleY).lineTo(pageRight, ruleY).strokeColor(GREEN).lineWidth(1.5).stroke();
-
-  // === TITLE ROW ===
-  const titleY = ruleY + 18;
-  const headingRaw = (extra.itemsHeading && String(extra.itemsHeading).trim()) || "";
-  const titleCase = TITLE.charAt(0) + TITLE.slice(1).toLowerCase();
-
-  // Left: title (serif)
-  d.font("Times-Bold").fontSize(28).fillColor(BLACK)
-    .text(`${titleCase} for`, pageLeft, titleY, { width: 320, lineGap: -2 });
-  let leftEndY = d.y;
-  if (headingRaw) {
-    d.font("Times-Bold").fontSize(28).fillColor(GREEN)
-      .text(headingRaw, pageLeft, leftEndY, { width: 320, lineGap: -2 });
-    leftEndY = d.y;
+    d.font("Times-Bold").fontSize(14).fillColor(BLACK).text(company?.name || "", 40, headerTop);
   }
 
-  // Right: pill + meta
-  const pillText = `OFFICIAL ${TITLE}`;
-  d.font("Helvetica-Bold").fontSize(8);
-  const pillTextW = d.widthOfString(pillText);
-  const pillW = pillTextW + 24;
-  const pillX = pageRight - pillW;
-  d.rect(pillX, titleY, pillW, 16).fillColor(GREEN_SOFT).fill();
-  d.fillColor(GREEN).text(pillText, pillX, titleY + 4, { width: pillW, align: "center", characterSpacing: 1.5 });
+  // Title — serif, large, top right
+  d.font("Times-Bold").fontSize(32).fillColor(BLACK)
+    .text(TITLES[doc.type], rightX, headerTop + 50, { align: "right", width: 555 - rightX });
 
-  let mY = titleY + 22;
+  const logoBottom = headerTop + (actualLogoH || 200);
+  const titleY = logoBottom + 25;
+
+  // === META ROW ===
+  const metaY = titleY + 40;
+  const billLines = [doc.client?.name, doc.client?.address, doc.client?.email, doc.client?.phone].filter(Boolean);
+  const billBoxW = 260;
+  const billBoxH = 14 + billLines.length * 14 + 12;
+
+  // Bill-to: green-tinted bg with green left border (4px)
+  d.rect(40, metaY - 4, billBoxW, billBoxH).fillColor(GREEN_SOFT_2).fill();
+  d.rect(40, metaY - 4, 4, billBoxH).fillColor(GREEN).fill();
+  d.fontSize(8).fillColor(GREEN).font("Helvetica-Bold").text("BILL TO", 56, metaY + 2, { characterSpacing: 1.6 });
+  d.font("Helvetica-Bold").fontSize(11).fillColor(BLACK).text(String(billLines[0] || ""), 56, metaY + 14, { width: billBoxW - 24 });
+  let billY = d.y;
+  d.font("Helvetica").fontSize(10).fillColor(MUTED);
+  billLines.slice(1).forEach((l) => { d.text(String(l), 56, billY, { width: billBoxW - 24 }); billY = d.y; });
+  billY = metaY - 4 + billBoxH;
+
+  // Right meta
+  let mY = metaY;
   const metaPairs: [string, string][] = [
-    [`${TITLE} No:`, doc.number],
-    ["Date Issued:", new Date(doc.issueDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })]
+    [`${TITLES[doc.type]} #`, doc.number],
+    ["DATE", new Date(doc.issueDate).toISOString().slice(0, 10)]
   ];
-  if (doc.dueDate) metaPairs.push([isQuotation ? "Valid Until:" : "Due:", new Date(doc.dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })]);
+  if (doc.dueDate) metaPairs.push([isQuotation ? "VALID UNTIL" : "DUE", new Date(doc.dueDate).toISOString().slice(0, 10)]);
 
   metaPairs.forEach(([label, val]) => {
-    d.font("Helvetica-Bold").fontSize(10).fillColor(BLACK).text(label, 320, mY, { align: "right", width: 235 - 110 - 5 });
-    d.font("Helvetica").fontSize(10).fillColor(TEXT).text(val, 440, mY, { align: "right", width: 115 });
-    mY = d.y + 3;
+    d.fontSize(8).fillColor(GREEN).font("Helvetica-Bold").text(label, rightX, mY, { align: "right", width: 215, characterSpacing: 1.6 });
+    mY = d.y;
+    d.fontSize(10).fillColor(BLACK).font("Helvetica").text(String(val), rightX, mY, { align: "right", width: 215 });
+    mY = d.y + 4;
   });
 
-  // === BILL TO ===
-  const billY = Math.max(leftEndY + 14, mY + 14);
-  const billLines = [doc.client?.address].filter(Boolean);
-  const billH = 22 + 14 + (billLines.join("\n") ? d.heightOfString(billLines.join("\n"), { width: pageW - 32 }) : 0) + 14;
-  d.rect(pageLeft, billY, pageW, billH).fillColor(GREEN_SOFT_2).fill();
-  d.rect(pageLeft, billY, 4, billH).fillColor(GREEN).fill();
+  // === ITEMS TABLE ===
+  const sectionY = Math.max(billY, mY) + 14;
+  const headingText = (extra.itemsHeading && String(extra.itemsHeading).trim()) || "ITEMS";
+  d.fontSize(9).font("Helvetica-Bold").fillColor(GREEN).text(headingText.toUpperCase(), 40, sectionY, { characterSpacing: 1.6 });
+  const tableTop = sectionY + 14;
 
-  d.font("Helvetica-Bold").fontSize(8).fillColor(GREEN).text("BILL TO", pageLeft + 16, billY + 10, { characterSpacing: 1.6 });
-  d.font("Helvetica-Bold").fontSize(13).fillColor(BLACK).text(doc.client?.name || "", pageLeft + 16, billY + 24, { width: pageW - 32 });
-  let bY = d.y + 2;
-  d.font("Helvetica").fontSize(10).fillColor(MUTED);
-  billLines.forEach((line) => {
-    d.text(String(line), pageLeft + 16, bY, { width: pageW - 32 });
-    bY = d.y;
-  });
-
-  let curY = billY + billH + 14;
-
-  // === PROJECT BAR (if heading) ===
-  if (headingRaw) {
-    const barH = 36;
-    d.rect(pageLeft, curY, pageW, barH).fillColor(BLACK).fill();
-    d.font("Helvetica-Bold").fontSize(11).fillColor("#ffffff").text(headingRaw, pageLeft + 16, curY + 8, { width: pageW - 32 });
-    if (doc.client?.name) {
-      d.font("Helvetica").fontSize(9).fillColor("#b8c4ba").text(doc.client.name, pageLeft + 16, curY + 22, { width: pageW - 32 });
-    }
-    curY += barH + 14;
-  }
-
-  // === COST TABLE ===
   const cols = {
-    desc:  { x: pageLeft,        w: 260 },
-    qty:   { x: pageLeft + 260,  w: 50 },
-    price: { x: pageLeft + 310,  w: 100 },
-    amt:   { x: pageLeft + 410,  w: 105 }
+    desc:  { x: 40,  w: 260 },
+    qty:   { x: 300, w: 45 },
+    price: { x: 345, w: 105 },
+    amt:   { x: 450, w: 105 }
   };
 
-  // Header row
-  const tHeaderY = curY;
-  const tHeaderH = 22;
-  d.rect(pageLeft, tHeaderY, pageW, tHeaderH).fillColor(GREEN_SOFT_2).fill();
-  d.font("Helvetica-Bold").fontSize(8).fillColor(GREEN);
-  d.text("ITEM / DESCRIPTION", cols.desc.x + 12, tHeaderY + 7, { width: cols.desc.w - 12, characterSpacing: 1.6 });
-  d.text("QTY", cols.qty.x, tHeaderY + 7, { width: cols.qty.w - 6, align: "right", characterSpacing: 1.6 });
-  d.text(`UNIT PRICE`, cols.price.x, tHeaderY + 7, { width: cols.price.w - 6, align: "right", characterSpacing: 1.6 });
-  d.text(`AMOUNT`, cols.amt.x, tHeaderY + 7, { width: cols.amt.w - 12, align: "right", characterSpacing: 1.6 });
+  // Light-green header row, green text
+  const headerH = 24;
+  d.rect(40, tableTop, 515, headerH).fillColor(GREEN_SOFT_2).fill();
+  d.fillColor(GREEN).font("Helvetica-Bold").fontSize(8);
+  const headerY = tableTop + 8;
+  d.text("ITEM / DESCRIPTION", cols.desc.x + 12, headerY, { width: cols.desc.w - 12, characterSpacing: 1.6 });
+  d.text("QTY", cols.qty.x, headerY, { width: cols.qty.w, align: "right", characterSpacing: 1.6 });
+  d.text("UNIT PRICE", cols.price.x, headerY, { width: cols.price.w - 6, align: "right", characterSpacing: 1.6 });
+  d.text("AMOUNT", cols.amt.x, headerY, { width: cols.amt.w - 12, align: "right", characterSpacing: 1.6 });
 
-  let rowY = tHeaderY + tHeaderH;
+  let rowY = tableTop + headerH;
 
   for (let i = 0; i < doc.items.length; i++) {
     const it = doc.items[i];
     const descH = d.heightOfString(String(it.description), { width: cols.desc.w - 24 });
-    const rowH = Math.max(descH, 14) + 14;
+    const rowH = Math.max(descH, 14) + 12;
 
     d.font("Helvetica").fontSize(11).fillColor(TEXT);
-    d.text(String(it.description), cols.desc.x + 12, rowY + 7, { width: cols.desc.w - 24 });
-    d.text(String(it.quantity), cols.qty.x, rowY + 7, { width: cols.qty.w - 6, align: "right" });
-    d.text(money(it.unitPrice, cur), cols.price.x, rowY + 7, { width: cols.price.w - 6, align: "right" });
-    d.text(money(it.amount, cur), cols.amt.x, rowY + 7, { width: cols.amt.w - 12, align: "right" });
+    d.text(String(it.description), cols.desc.x + 12, rowY + 6, { width: cols.desc.w - 24 });
+    d.text(String(it.quantity), cols.qty.x, rowY + 6, { width: cols.qty.w, align: "right" });
+    d.text(money(it.unitPrice, cur), cols.price.x, rowY + 6, { width: cols.price.w - 6, align: "right" });
+    d.text(money(it.amount, cur), cols.amt.x, rowY + 6, { width: cols.amt.w - 12, align: "right" });
 
     rowY += rowH;
-    d.moveTo(pageLeft, rowY).lineTo(pageRight, rowY).strokeColor(LINE).lineWidth(0.5).stroke();
+    d.moveTo(40, rowY).lineTo(555, rowY).strokeColor(LINE).lineWidth(0.5).stroke();
   }
 
-  // Subtotal row
-  d.font("Helvetica-Bold").fontSize(10).fillColor(BLACK);
-  d.text("Subtotal", pageLeft + 12, rowY + 9, { width: pageW - cols.amt.w - 24, align: "left" });
-  d.text(money(doc.subtotal, cur), cols.amt.x, rowY + 9, { width: cols.amt.w - 12, align: "right" });
-  rowY += 26;
-  d.moveTo(pageLeft, rowY).lineTo(pageRight, rowY).strokeColor(LINE).lineWidth(0.5).stroke();
+  // === TOTALS (black bar for total) ===
+  const totalsY = rowY + 12;
+  const lineH = 18;
+  d.font("Helvetica").fontSize(10).fillColor(MUTED);
+  d.text("Subtotal", 350, totalsY, { width: 110, align: "right" });
+  d.fillColor(BLACK).text(money(doc.subtotal, cur), 460, totalsY, { width: 95, align: "right" });
 
-  // Tax row
-  d.font("Helvetica").fontSize(10).fillColor(TEXT);
-  d.text(`Tax (${String(doc.taxRate)}%)`, pageLeft + 12, rowY + 9, { width: pageW - cols.amt.w - 24, align: "left" });
-  d.text(money(doc.taxAmount, cur), cols.amt.x, rowY + 9, { width: cols.amt.w - 12, align: "right" });
-  rowY += 26;
+  d.fillColor(MUTED).text(`Tax (${String(doc.taxRate)}%)`, 350, totalsY + lineH, { width: 110, align: "right" });
+  d.fillColor(BLACK).text(money(doc.taxAmount, cur), 460, totalsY + lineH, { width: 95, align: "right" });
 
-  // TOTAL row (black bar)
+  // Black total bar (full width)
+  const totalRowY = totalsY + lineH * 2 + 8;
   const totalH = 30;
-  d.rect(pageLeft, rowY, pageW, totalH).fillColor(BLACK).fill();
-  d.font("Helvetica-Bold").fontSize(11).fillColor("#ffffff");
-  d.text(`TOTAL ${TITLE} VALUE`, pageLeft + 16, rowY + 11, { width: pageW - cols.amt.w - 28, characterSpacing: 1.4 });
-  d.fontSize(13).text(money(doc.total, cur), cols.amt.x, rowY + 9, { width: cols.amt.w - 12, align: "right" });
-  rowY += totalH + 18;
+  d.rect(40, totalRowY, 515, totalH).fillColor(BLACK).fill();
+  d.fillColor("#ffffff").font("Helvetica-Bold").fontSize(11);
+  d.text(`TOTAL ${TITLES[doc.type]} VALUE`, 56, totalRowY + 10, { width: 360, characterSpacing: 1.4 });
+  d.fontSize(14).text(money(doc.total, cur), 460, totalRowY + 8, { width: 95, align: "right" });
+  d.fillColor(BLACK);
+  rowY = totalRowY + totalH;
 
-  // === TWO-COL: Notes + Payment Details ===
-  const haveNotes = !!doc.notes;
-  const havePay = !!company?.bankDetails;
-  if (haveNotes || havePay) {
-    const colW = (pageW - 14) / 2;
-    const cardH = 70;
-
-    if (haveNotes) {
-      d.rect(pageLeft, rowY, colW, cardH).fillColor("#fafafa").fill();
-      d.rect(pageLeft, rowY, colW, cardH).strokeColor(LINE).lineWidth(0.5).stroke();
-      d.font("Helvetica-Bold").fontSize(8).fillColor(GREEN).text("NOTES", pageLeft + 12, rowY + 10, { characterSpacing: 1.6 });
-      d.font("Helvetica").fontSize(10).fillColor(TEXT).text(String(doc.notes), pageLeft + 12, rowY + 24, { width: colW - 24, height: cardH - 30 });
-    }
-    if (havePay) {
-      const px = haveNotes ? pageLeft + colW + 14 : pageLeft;
-      const pw = haveNotes ? colW : pageW;
-      d.rect(px, rowY, pw, cardH).fillColor(GREEN_SOFT_2).fill();
-      d.font("Helvetica-Bold").fontSize(8).fillColor(GREEN).text("PAYMENT DETAILS", px + 12, rowY + 10, { characterSpacing: 1.6 });
-      d.font("Helvetica").fontSize(10).fillColor(TEXT).text(String(company.bankDetails), px + 12, rowY + 24, { width: pw - 24, height: cardH - 30 });
-    }
-    rowY += cardH + 18;
+  // === NOTES / PAYMENT (single column, like other templates) ===
+  let footY = rowY + 18;
+  d.font("Helvetica").fontSize(10).fillColor(BLACK);
+  if (doc.notes) {
+    d.fontSize(8).fillColor(GREEN).font("Helvetica-Bold").text("NOTES", 40, footY, { characterSpacing: 1.6 });
+    d.fontSize(10).fillColor(TEXT).font("Helvetica").text(String(doc.notes), 40, footY + 12, { width: 515 });
+    footY = d.y + 12;
   }
-
-  // === SIGNATURES ===
-  const sigY = rowY + 8;
-  d.moveTo(pageLeft, sigY).lineTo(pageRight, sigY).strokeColor(LINE).lineWidth(0.5).stroke();
-  const sigBlockY = sigY + 14;
-  const halfW = pageW / 2;
-
-  d.font("Helvetica").fontSize(9).fillColor(MUTED).text("Client Acceptance Signature", pageLeft, sigBlockY);
-  d.moveTo(pageLeft, sigBlockY + 50).lineTo(pageLeft + 200, sigBlockY + 50).strokeColor(BLACK).lineWidth(0.5).stroke();
-  d.font("Helvetica").fontSize(9).fillColor(TEXT).text("Authorised Signatory", pageLeft, sigBlockY + 54);
-  d.font("Helvetica").fontSize(9).fillColor(TEXT).text("Date: _________________", pageLeft, sigBlockY + 68);
-
-  d.font("Helvetica").fontSize(9).fillColor(MUTED).text("Issued by", pageLeft + halfW + 20, sigBlockY, { width: halfW - 20, align: "left" });
-  d.moveTo(pageRight - 200, sigBlockY + 50).lineTo(pageRight, sigBlockY + 50).strokeColor(BLACK).lineWidth(0.5).stroke();
-  d.font("Helvetica-Bold").fontSize(11).fillColor(BLACK).text(company?.name || "", pageRight - 200, sigBlockY + 54, { width: 200, align: "left" });
-  if (company?.email || company?.phone) {
-    d.font("Helvetica").fontSize(9).fillColor(MUTED).text([company?.email, company?.phone].filter(Boolean).join(" · "), pageRight - 200, sigBlockY + 68, { width: 200 });
+  if (company?.bankDetails) {
+    d.fontSize(8).fillColor(GREEN).font("Helvetica-Bold").text("PAYMENT DETAILS", 40, footY, { characterSpacing: 1.6 });
+    d.fontSize(10).fillColor(TEXT).font("Helvetica").text(String(company.bankDetails), 40, footY + 12, { width: 515 });
+    footY = d.y + 12;
   }
 
   // === FOOTER ===
-  const footY = sigBlockY + 100;
-  const footParts = [company?.name, company?.email, company?.phone, company?.address].filter(Boolean).join(" · ");
-  d.fontSize(8).fillColor(MUTED).text(footParts || "HOPEWORKSHOP PROJECT · Generated by AIO DoCX", pageLeft, footY, { width: pageW, align: "center", lineBreak: false });
+  footY += 8;
+  d.fontSize(8).fillColor(MUTED).text(
+    "HOPEWORKSHOP PROJECT · Generated by AIO DoCX",
+    40, footY, { width: 515, align: "center", lineBreak: false }
+  );
 }
 
 function renderLetterPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, signatureBuf: Buffer | null, headerOffset: number) {
