@@ -9,6 +9,14 @@ function money(v: any, cur = "NGN") {
   return `${cur} ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+// Strip carriage returns (Windows line endings render as `Ð` glyphs in PDFKit's WinAnsi)
+// and normalize any remaining text-corrupting control chars.
+function clean(v: any): any {
+  if (v == null) return v;
+  if (typeof v === "string") return v.replace(/\r\n?/g, "\n");
+  return v;
+}
+
 async function loadImage(storedPath: string | null | undefined): Promise<Buffer | null> {
   if (!storedPath) return null;
   try {
@@ -32,6 +40,30 @@ export async function renderDocumentPdf(doc: any, company: any): Promise<Buffer>
     loadImage(company?.letterheadPath),
     loadImage(company?.signaturePath)
   ]);
+
+  // Sanitize all string fields that get rendered (strip CRs from Windows line endings)
+  if (doc) {
+    doc = { ...doc };
+    doc.notes = clean(doc.notes);
+    if (doc.client) doc.client = { ...doc.client, name: clean(doc.client.name), address: clean(doc.client.address), email: clean(doc.client.email), phone: clean(doc.client.phone) };
+    if (Array.isArray(doc.items)) doc.items = doc.items.map((it: any) => ({ ...it, description: clean(it.description), model: clean(it.model), unit: clean(it.unit), serialNumber: clean(it.serialNumber), remarks: clean(it.remarks) }));
+    if (doc.data && typeof doc.data === "object") {
+      doc.data = { ...doc.data };
+      for (const k of Object.keys(doc.data)) doc.data[k] = clean(doc.data[k]);
+    }
+  }
+  if (company) {
+    company = {
+      ...company,
+      name: clean(company.name),
+      address: clean(company.address),
+      phone: clean(company.phone),
+      email: clean(company.email),
+      website: clean(company.website),
+      bankDetails: clean(company.bankDetails),
+      taxId: clean(company.taxId)
+    };
+  }
 
   return await new Promise<Buffer>((resolve, reject) => {
     try {
