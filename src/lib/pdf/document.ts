@@ -309,9 +309,9 @@ function renderInvoiceQuotationModern(d: PDFKit.PDFDocument, doc: any, company: 
 
   // Title positioned at top right, aligned with logo
   d.fontSize(28).font("Helvetica-Bold").fillColor("#111")
-    .text(TITLES[doc.type], rightX, headerTop + 50, { align: "right", width: 555 - rightX });
-  const logoBottom = headerTop + (actualLogoH || 200);
-  const titleY = logoBottom + 25;
+    .text(TITLES[doc.type], rightX, headerTop + 30, { align: "right", width: 555 - rightX });
+  const logoBottom = headerTop + Math.max(actualLogoH, 60);
+  const titleY = logoBottom + 12;
   d.fillColor("#111").font("Helvetica").fontSize(10);
 
   // === META ROW ===
@@ -466,7 +466,7 @@ function renderInvoiceQuotationClassic(d: PDFKit.PDFDocument, doc: any, company:
     .text(TITLES[doc.type], rightX, headerTop + 30, { align: "right", width: 555 - rightX, characterSpacing: 4 });
 
   // Double horizontal rule under header
-  const ruleY = Math.max(headerTop + (actualLogoH || 90), headerTop + 70) + 14;
+  const ruleY = headerTop + Math.max(actualLogoH, 60) + 8;
   d.moveTo(40, ruleY).lineTo(555, ruleY).strokeColor("#222").lineWidth(1.2).stroke();
   d.moveTo(40, ruleY + 3).lineTo(555, ruleY + 3).strokeColor("#222").lineWidth(0.5).stroke();
 
@@ -600,7 +600,7 @@ function renderInvoiceQuotationMinimal(d: PDFKit.PDFDocument, doc: any, company:
   d.fontSize(34).font("Helvetica").fillColor("#cccccc")
     .text(TITLES[doc.type], rightX, headerTop + 18, { align: "right", width: 555 - rightX, characterSpacing: 6 });
 
-  const baseY = Math.max(headerTop + (actualLogoH || 70), headerTop + 60) + 30;
+  const baseY = headerTop + Math.max(actualLogoH, 50) + 16;
 
   // === META ROW (no boxes, just text) ===
   const metaY = baseY;
@@ -732,13 +732,13 @@ function renderInvoiceQuotationElegant(d: PDFKit.PDFDocument, doc: any, company:
 
   // Title — serif, large, top right
   d.font("Times-Bold").fontSize(32).fillColor(BLACK)
-    .text(TITLES[doc.type], rightX, headerTop + 50, { align: "right", width: 555 - rightX });
+    .text(TITLES[doc.type], rightX, headerTop + 30, { align: "right", width: 555 - rightX });
 
-  const logoBottom = headerTop + (actualLogoH || 200);
-  const titleY = logoBottom + 25;
+  const logoBottom = headerTop + Math.max(actualLogoH, 60);
+  const titleY = logoBottom + 12;
 
   // === META ROW ===
-  const metaY = titleY + 40;
+  const metaY = titleY + 20;
   const billLines = [doc.client?.name, doc.client?.address, doc.client?.email, doc.client?.phone].filter(Boolean);
   const billBoxW = 260;
   const billBoxH = 14 + billLines.length * 14 + 12;
