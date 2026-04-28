@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quotation – Relucid Creatives</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;0,800;0,900;1,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #2d6e3e;
+    --green-deep: #1f5430;
+    --green-soft: #e7f0e9;
+    --green-soft-2: #eef4ef;
+    --black: #111111;
+    --ink: #1a1a1a;
+    --text: #2b2b2b;
+    --muted: #8a8a8a;
+    --muted-2: #a8a8a8;
+    --line: #e5e5e5;
+    --warn-bg: #fff5d9;
+    --warn-border: #f4c03b;
+    --warn-icon: #e89c1f;
+    --red: #c0392b;
+    --red-soft: #d97a70;
+    --orange: #e67e22;
+    --cream: #fafafa;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background: #e9e9e9;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* A4: 210mm x 297mm */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 16px auto;
+    background: #fff;
+    padding: 14mm 16mm;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.10);
+    position: relative;
+  }
+
+  /* ============ HEADER ============ */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 14px;
+    border-bottom: 1.5px solid #2d6e3e;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-mark {
+    width: 44px;
+    height: 44px;
+    background: var(--green);
+    border-radius: 5px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  /* white plus sign with two square dots */
+  .logo-mark::before,
+  .logo-mark::after {
+    content: "";
+    position: absolute;
+    background: #fff;
+  }
+  .logo-mark::before {
+    width: 18px; height: 3px;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .logo-mark::after {
+    width: 3px; height: 18px;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .logo-mark .dot-tl,
+  .logo-mark .dot-br {
+    position: absolute;
+    width: 5px; height: 5px;
+    background: #fff;
+    border-radius: 1px;
+  }
+  .logo-mark .dot-tl { top: 6px; left: 6px; }
+  .logo-mark .dot-br { bottom: 6px; right: 6px; }
+
+  .brand-text {
+    font-family: 'Playfair Display', serif;
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--black);
+    line-height: 1.05;
+    letter-spacing: 0.3px;
+  }
+  .brand-text span { display: block; }
+
+  .header-meta {
+    display: flex;
+    gap: 28px;
+  }
+  .meta-col .label {
+    color: var(--green);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 1.4px;
+    margin-bottom: 4px;
+  }
+  .meta-col .value {
+    font-size: 11px;
+    color: var(--text);
+    line-height: 1.45;
+  }
+
+  /* ============ TITLE ROW ============ */
+  .title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 18px;
+    margin-bottom: 16px;
+  }
+
+  .title {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.05;
+    color: var(--black);
+    margin: 0;
+  }
+  .title .accent {
+    display: block;
+    color: var(--green);
+    font-weight: 800;
+  }
+
+  .quote-meta { text-align: right; padding-top: 4px; }
+  .official-tag {
+    background: var(--green-soft);
+    color: var(--green);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    padding: 5px 10px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .quote-meta .row {
+    font-size: 11px;
+    margin: 3px 0;
+    color: var(--text);
+  }
+  .quote-meta .row b { font-weight: 700; color: var(--ink); }
+
+  /* ============ BILL TO ============ */
+  .bill-to {
+    background: var(--green-soft-2);
+    border-left: 4px solid var(--green);
+    padding: 12px 16px;
+    border-radius: 3px;
+    margin-bottom: 16px;
+  }
+  .bill-to .label {
+    color: var(--green);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    margin-bottom: 6px;
+  }
+  .bill-to .name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--black);
+    margin-bottom: 4px;
+  }
+  .bill-to .addr {
+    color: var(--muted);
+    font-size: 11.5px;
+    line-height: 1.55;
+  }
+
+  /* ============ SECTION LABEL ============ */
+  .section-label {
+    color: var(--green);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    margin: 14px 0 8px;
+  }
+
+  /* ============ PROJECT BAR ============ */
+  .project-bar {
+    background: var(--black);
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .project-bar .pname {
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.2px;
+  }
+  .project-bar .pclient {
+    color: #b8c4ba;
+    font-size: 11px;
+    margin-top: 3px;
+  }
+  .project-bar .duration { text-align: right; font-size: 10px; color: #b8c4ba; line-height: 1.45; }
+  .project-bar .duration b {
+    display: block;
+    color: #fff;
+    font-size: 12px;
+    margin: 1px 0;
+    font-weight: 700;
+  }
+
+  /* ============ COST TABLE ============ */
+  .cost-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 16px;
+  }
+  .cost-table thead th {
+    background: var(--green-soft-2);
+    color: var(--green);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    text-align: left;
+    padding: 9px 14px;
+  }
+  .cost-table thead th.num { text-align: right; }
+  .cost-table thead th:nth-child(2) { width: 50px; }
+  .cost-table thead th:nth-child(3) { width: 110px; }
+  .cost-table thead th:nth-child(4) { width: 110px; }
+  .cost-table tbody td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--text);
+  }
+  .cost-table tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .cost-table tbody td .muted { color: var(--muted); font-size: 10.5px; }
+
+  .cost-table tr.bold td { font-weight: 700; color: var(--black); }
+  .cost-table tr.discount td { color: var(--red); font-weight: 500; }
+  .cost-table tr.discount td .muted { color: var(--red-soft); }
+
+  .cost-table tr.total td {
+    background: var(--black);
+    color: #fff;
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 1px;
+    padding: 11px 14px;
+    border: none;
+  }
+  .cost-table tr.total td:last-child { font-size: 15px; letter-spacing: 0; }
+
+  /* ============ SCOPE ============ */
+  .scope-wrap {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .scope-wrap .watermark {
+    position: absolute;
+    right: -10px;
+    bottom: -20px;
+    font-family: 'Playfair Display', serif;
+    font-weight: 800;
+    font-size: 110px;
+    color: rgba(45,110,62,0.06);
+    line-height: 1;
+    letter-spacing: -2px;
+    transform: rotate(-12deg);
+    pointer-events: none;
+    user-select: none;
+  }
+  .scope-wrap ul { list-style: none; margin: 0; padding: 0; position: relative; }
+  .scope-wrap li {
+    padding: 15px 24px 15px 46px;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+    color: var(--text);
+    position: relative;
+  }
+  .scope-wrap li:last-child { border-bottom: none; }
+  .scope-wrap li::before {
+    content: "";
+    position: absolute;
+    left: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 7px;
+    height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+  }
+
+  /* ============ TWO-COL CARDS ============ */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .info-card {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 12px 14px;
+  }
+  .info-card .label {
+    color: var(--green);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    margin-bottom: 8px;
+  }
+  .info-card p { margin: 5px 0; font-size: 11.5px; line-height: 1.5; color: var(--text); }
+  .info-card p:first-of-type { margin-top: 0; }
+  .info-card .arrow { color: var(--green); font-weight: 700; margin-right: 3px; }
+  .info-card b { font-weight: 700; color: var(--black); }
+  .info-card .expires { color: var(--orange); font-weight: 700; }
+
+  /* ============ PAYMENT CARD ============ */
+  .payment-card {
+    background: var(--green-soft-2);
+    border-radius: 3px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .bank-logo {
+    width: 36px; height: 36px;
+    background: var(--black);
+    color: #fff;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    flex-shrink: 0;
+    letter-spacing: -1px;
+  }
+  .payment-card .label {
+    color: var(--green);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    margin-bottom: 4px;
+  }
+  .payment-card .acct-name {
+    font-weight: 700;
+    color: var(--black);
+    font-size: 13px;
+  }
+  .payment-card .acct-num {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  /* ============ SIGNATURES ============ */
+  .sig-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 16px;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+  }
+  .sig {
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+  }
+  .sig.right { align-items: flex-end; text-align: right; }
+  .sig .heading {
+    color: var(--muted);
+    font-size: 10.5px;
+    margin-bottom: 36px;
+  }
+  .sig .signature-img {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: -4px;
+    transform: rotate(-3deg);
+    align-self: flex-end;
+  }
+  .sig .line {
+    border-top: 1px solid var(--ink);
+    padding-top: 6px;
+    width: 200px;
+  }
+  .sig.right .line { width: 200px; }
+  .sig .name { font-weight: 700; color: var(--black); font-size: 13px; }
+  .sig .role { color: var(--muted); font-style: italic; font-size: 11px; margin-top: 1px; }
+  .sig .company { font-weight: 700; color: var(--black); font-size: 11px; margin-top: 3px; letter-spacing: 0.3px; }
+  .sig .date-line { margin-top: 6px; font-size: 11px; color: var(--text); }
+
+  /* ============ FOOTER ============ */
+  .footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 10px;
+    padding-top: 12px;
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 760px) {
+    .page { padding: 32px 24px; margin: 12px; }
+    .header { flex-direction: column; gap: 24px; }
+    .header-meta { gap: 28px; flex-wrap: wrap; }
+    .title-row { flex-direction: column; gap: 22px; }
+    .quote-meta { text-align: left; }
+    .title { font-size: 34px; }
+    .project-bar { flex-direction: column; align-items: flex-start; gap: 14px; }
+    .project-bar .duration { text-align: left; }
+    .two-col { grid-template-columns: 1fr; }
+    .sig-block { grid-template-columns: 1fr; gap: 50px; }
+    .sig.right { align-items: flex-start; text-align: left; }
+  }
+
+  @page { size: A4; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .page {
+      box-shadow: none;
+      margin: 0;
+      width: 210mm;
+      min-height: 297mm;
+      padding: 12mm 14mm;
+      page-break-after: avoid;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ===== TITLE ===== -->
+  <div class="title-row">
+    <h1 class="title">Quotation for<span class="accent">Website Services</span></h1>
+    <div class="quote-meta">
+      <div class="official-tag">OFFICIAL QUOTATION</div>
+      <div class="row"><b>Quotation No:</b> QUO-2026-0142</div>
+      <div class="row"><b>Date Issued:</b> 25 April, 2026</div>
+      <div class="row"><b>Valid Until:</b> 25 May, 2026</div>
+    </div>
+  </div>
+
+  <!-- ===== BILL TO ===== -->
+  <div class="bill-to">
+    <div class="label">BILL TO</div>
+    <div class="name">Kakanfo Inn and Conference Centre</div>
+    <div class="addr">
+      1 Nihinlola Street, Off Mobil Petrol Station,<br/>
+      Off Joyce'B Area, GPO 1783 Ring Road, Ibadan, Nigeria
+    </div>
+  </div>
+
+  <!-- ===== PROJECT DETAILS ===== -->
+  
+  <div class="project-bar">
+    <div>
+      <div class="pname">Development of Custom Website Landing Page</div>
+    </div>
+  </div>
+
+  <!-- ===== COST BREAKDOWN ===== -->
+  
+  <table class="cost-table">
+    <thead>
+      <tr>
+        <th>ITEM / DESCRIPTION</th>
+        <th class="num">QTY</th>
+        <th class="num">UNIT PRICE (₦)</th>
+        <th class="num">AMOUNT (₦)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Design and Development</td>
+        <td class="num">1</td>
+        <td class="num">1,200,000</td>
+        <td class="num">1,200,000</td>
+      </tr>
+      <tr>
+        <td>Private Server Hosting <span class="muted">(monthly)</span></td>
+        <td class="num">12</td>
+        <td class="num">50,000</td>
+        <td class="num">600,000</td>
+      </tr>
+      <tr class="bold">
+        <td colspan="3">Subtotal</td>
+        <td class="num">1,800,000</td>
+      </tr>
+      <tr class="discount">
+        <td colspan="3">Discount (10%) <span class="muted">— Valid until 02/05/2026</span></td>
+        <td class="num">-180,000</td>
+      </tr>
+      <tr class="bold">
+        <td colspan="3">Subtotal After Discount</td>
+        <td class="num">1,620,000</td>
+      </tr>
+      <tr>
+        <td colspan="3">VAT (7.5%)</td>
+        <td class="num">121,500</td>
+      </tr>
+      <tr class="total">
+        <td colspan="3">TOTAL PROJECT COST</td>
+        <td class="num">₦1,741,500</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ===== TERMS / DISCOUNT ===== -->
+  <div class="two-col">
+    <div class="info-card">
+      <div class="label">PAYMENT TERMS</div>
+      <p><span class="arrow">→</span> <b>70% deposit (₦1,219,050)</b> required to continue work</p>
+      <p><span class="arrow">→</span> <b>30% balance (₦522,450)</b> payable upon project completion &amp; handover</p>
+    </div>
+    <div class="info-card">
+      <div class="label">DISCOUNT VALIDITY</div>
+      <p>The <b>10% discount</b> is valid for <b>one (1) week</b> from the date of this quotation.</p>
+      <p>Discount expires: <span class="expires">02/05/2026</span></p>
+    </div>
+  </div>
+
+  <!-- ===== WARNING ===== -->
+  
+
+  <!-- ===== PAYMENT DETAILS ===== -->
+  <div class="payment-card">
+    <div class="bank-logo">K.</div>
+    <div>
+      <div class="label">PAYMENT DETAILS</div>
+      <div class="acct-name">Stay Njokede</div>
+      <div class="acct-num">Account No: 2022485124 &nbsp;|&nbsp; Kuda Bank</div>
+    </div>
+  </div>
+
+  <!-- ===== SIGNATURES ===== -->
+  <div class="sig-block">
+    <div class="sig">
+      <div class="heading">Client Acceptance Signature</div>
+      <div class="line">
+        <div>Authorised Signatory</div>
+        <div class="date-line">Date: _________________</div>
+      </div>
+    </div>
+    <div class="sig right">
+      <div class="heading">Issued by</div>
+      <div class="line">
+        <div class="name">Stay Njokede</div>
+        <div class="role">Project Manager</div>
+        <div class="company">RELUCID CREATIVES</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <div class="footer">
+    Relucid Creatives &middot; info@relucid.com &middot; +234 70 6294 9263 &middot; 21 Road F Close H6, Festac, Lagos
+  </div>
+
+</div>
+
+</body>
+</html>

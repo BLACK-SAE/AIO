@@ -25,7 +25,7 @@ export async function saveCompany(formData: FormData) {
   const currency = String(formData.get("currency") || "NGN");
   const letterheadOffset = Number(formData.get("letterheadOffset") || 0);
   const invoiceTemplateRaw = String(formData.get("invoiceTemplate") || "modern");
-  const invoiceTemplate = ["modern", "classic", "minimal"].includes(invoiceTemplateRaw) ? invoiceTemplateRaw : "modern";
+  const invoiceTemplate = ["modern", "classic", "minimal", "elegant"].includes(invoiceTemplateRaw) ? invoiceTemplateRaw : "modern";
 
   const removeLogo = formData.get("removeLogo") === "1";
   const removeLetterhead = formData.get("removeLetterhead") === "1";

@@ -102,10 +102,11 @@ function TemplatePicker({ name, defaultValue }: { name: string; defaultValue: st
   const templates = [
     { id: "modern", title: "Modern", desc: "Dark navy header, alternating rows, bold totals bar." },
     { id: "classic", title: "Classic", desc: "Conservative double rules, gray accents, traditional invoice look." },
-    { id: "minimal", title: "Minimal", desc: "Lots of white space, light typography, subtle separators." }
+    { id: "minimal", title: "Minimal", desc: "Lots of white space, light typography, subtle separators." },
+    { id: "elegant", title: "Elegant", desc: "Green accent, serif title, project bar, signature block." }
   ];
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       {templates.map((t) => (
         <label
           key={t.id}
@@ -127,7 +128,33 @@ function TemplatePicker({ name, defaultValue }: { name: string; defaultValue: st
   );
 }
 
-function TemplatePreview({ kind }: { kind: "modern" | "classic" | "minimal" }) {
+function TemplatePreview({ kind }: { kind: "modern" | "classic" | "minimal" | "elegant" }) {
+  if (kind === "elegant") {
+    return (
+      <div className="aspect-[4/3] bg-white border rounded mb-3 p-2 overflow-hidden">
+        <div className="flex justify-between items-start mb-1">
+          <div className="w-7 h-2.5 bg-muted rounded-sm" />
+          <div className="text-[6px] font-bold tracking-[0.15em] bg-[#e7f0e9] text-[#2d6e3e] px-1 rounded-sm">OFFICIAL</div>
+        </div>
+        <div className="h-px bg-[#2d6e3e] mb-1" />
+        <div className="text-[8px] font-bold leading-tight" style={{ fontFamily: "Georgia, serif" }}>
+          <span className="text-black">Quotation for</span>
+          <span className="text-[#2d6e3e] block">Services</span>
+        </div>
+        <div className="bg-[#eef4ef] border-l-2 border-[#2d6e3e] pl-1 py-0.5 my-1 text-[5px]">
+          <div className="text-[#2d6e3e] font-bold">BILL TO</div>
+          <div className="font-bold">Client</div>
+        </div>
+        <div className="h-2 bg-black mb-1" />
+        <div className="bg-[#eef4ef] h-1.5 mb-px" />
+        <div className="h-px bg-gray-200" />
+        <div className="h-1.5 mb-px" />
+        <div className="h-px bg-gray-200" />
+        <div className="h-1.5" />
+        <div className="bg-black h-2 mt-1" />
+      </div>
+    );
+  }
   if (kind === "modern") {
     return (
       <div className="aspect-[4/3] bg-white border rounded mb-3 p-2 overflow-hidden">
