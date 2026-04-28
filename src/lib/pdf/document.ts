@@ -119,9 +119,6 @@ function renderWaybillPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: 
       actualLogoH = img.height * scale;
       d.image(logoBuf, pageLeft, headerTop, { fit: [160, 80] });
     } catch {}
-  } else {
-    d.fontSize(14).font("Helvetica-Bold").text(company?.name || "", pageLeft, headerTop);
-    actualLogoH = 20;
   }
 
   // WAYBILL title bar
@@ -303,8 +300,6 @@ function renderInvoiceQuotationModern(d: PDFKit.PDFDocument, doc: any, company: 
       actualLogoH = img.height * scale;
       d.image(logoBuf, 40, headerTop, { fit: [200, 200] });
     } catch {}
-  } else {
-    d.fontSize(14).font("Helvetica-Bold").text(company?.name || "", 40, headerTop);
   }
 
   // Title positioned at top right, aligned with logo
@@ -457,8 +452,6 @@ function renderInvoiceQuotationClassic(d: PDFKit.PDFDocument, doc: any, company:
       actualLogoH = img.height * scale;
       d.image(logoBuf, 40, headerTop, { fit: [180, 90] });
     } catch {}
-  } else {
-    d.fontSize(14).font("Helvetica-Bold").text(company?.name || "", 40, headerTop);
   }
 
   // Title — serif-feel uppercase with letter-spacing, plain
@@ -592,8 +585,6 @@ function renderInvoiceQuotationMinimal(d: PDFKit.PDFDocument, doc: any, company:
       actualLogoH = img.height * scale;
       d.image(logoBuf, 40, headerTop, { fit: [140, 70] });
     } catch {}
-  } else {
-    d.fontSize(14).font("Helvetica-Bold").text(company?.name || "", 40, headerTop);
   }
 
   // Title — light, very large, low contrast
@@ -726,8 +717,6 @@ function renderInvoiceQuotationElegant(d: PDFKit.PDFDocument, doc: any, company:
       actualLogoH = img.height * scale;
       d.image(logoBuf, 40, headerTop, { fit: [200, 200] });
     } catch {}
-  } else {
-    d.font("Times-Bold").fontSize(14).fillColor(BLACK).text(company?.name || "", 40, headerTop);
   }
 
   // Title — serif, large, top right
@@ -869,9 +858,6 @@ function renderLetterPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: a
       actualLogoH = img.height * scale;
       d.image(logoBuf, pageLeft, headerTop, { fit: [160, 80] });
     } catch {}
-  } else {
-    d.fontSize(14).font("Helvetica-Bold").text(company?.name || "", pageLeft, headerTop);
-    actualLogoH = 20;
   }
 
   // Divider line
