@@ -18,7 +18,7 @@ function clean(v: any): any {
 }
 
 // Two-column signature block for invoices. Returns the y-position below it.
-function drawInvoiceSignatures(d: PDFKit.PDFDocument, startY: number): number {
+function drawInvoiceSignatures(d: PDFKit.PDFDocument, startY: number, signatureBuf: Buffer | null = null): number {
   const pageLeft = 40, pageRight = 555, pageW = pageRight - pageLeft;
   const halfW = (pageW - 40) / 2;
   const labelY = startY + 8;
@@ -26,12 +26,28 @@ function drawInvoiceSignatures(d: PDFKit.PDFDocument, startY: number): number {
 
   d.moveTo(pageLeft, startY).lineTo(pageRight, startY).strokeColor("#ddd").lineWidth(0.5).stroke();
 
+  // Customer (left)
   d.font("Helvetica-Bold").fontSize(8).fillColor("#666").text("CUSTOMER SIGNATURE", pageLeft, labelY, { characterSpacing: 1.5 });
   d.moveTo(pageLeft, lineY).lineTo(pageLeft + halfW, lineY).strokeColor("#333").lineWidth(0.5).stroke();
   d.font("Helvetica").fontSize(8).fillColor("#999").text("Name / Signature / Date", pageLeft, lineY + 4);
 
+  // Authorized (right)
   const rightStart = pageLeft + halfW + 40;
   d.font("Helvetica-Bold").fontSize(8).fillColor("#666").text("AUTHORIZED SIGNATURE", rightStart, labelY, { characterSpacing: 1.5 });
+
+  // Drop signature image just above the line
+  if (signatureBuf) {
+    try {
+      const img: any = (d as any).openImage(signatureBuf);
+      const maxW = Math.min(halfW, 130);
+      const maxH = 36;
+      const scale = Math.min(maxW / img.width, maxH / img.height);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      d.image(signatureBuf, rightStart, lineY - h - 2, { fit: [maxW, maxH] });
+    } catch {}
+  }
+
   d.moveTo(rightStart, lineY).lineTo(rightStart + halfW, lineY).strokeColor("#333").lineWidth(0.5).stroke();
   d.font("Helvetica").fontSize(8).fillColor("#999").text("Name / Signature / Date", rightStart, lineY + 4);
 
@@ -115,7 +131,7 @@ export async function renderDocumentPdf(doc: any, company: any): Promise<Buffer>
       } else if (doc.type === "LETTER") {
         renderLetterPdf(d, doc, company, extra, logoBuf, signatureBuf, headerOffset);
       } else {
-        renderInvoiceQuotationPdf(d, doc, company, extra, logoBuf, headerOffset, cur, isQuotation);
+        renderInvoiceQuotationPdf(d, doc, company, extra, logoBuf, signatureBuf, headerOffset, cur, isQuotation);
       }
 
       d.end();
@@ -299,16 +315,16 @@ function renderWaybillPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: 
   );
 }
 
-function renderInvoiceQuotationPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, headerOffset: number, cur: string, isQuotation: boolean) {
+function renderInvoiceQuotationPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, signatureBuf: Buffer | null, headerOffset: number, cur: string, isQuotation: boolean) {
   const template = company?.invoiceTemplate || "modern";
-  if (template === "classic") return renderInvoiceQuotationClassic(d, doc, company, extra, logoBuf, headerOffset, cur, isQuotation);
-  if (template === "minimal") return renderInvoiceQuotationMinimal(d, doc, company, extra, logoBuf, headerOffset, cur, isQuotation);
-  if (template === "elegant") return renderInvoiceQuotationElegant(d, doc, company, extra, logoBuf, headerOffset, cur, isQuotation);
-  return renderInvoiceQuotationModern(d, doc, company, extra, logoBuf, headerOffset, cur, isQuotation);
+  if (template === "classic") return renderInvoiceQuotationClassic(d, doc, company, extra, logoBuf, signatureBuf, headerOffset, cur, isQuotation);
+  if (template === "minimal") return renderInvoiceQuotationMinimal(d, doc, company, extra, logoBuf, signatureBuf, headerOffset, cur, isQuotation);
+  if (template === "elegant") return renderInvoiceQuotationElegant(d, doc, company, extra, logoBuf, signatureBuf, headerOffset, cur, isQuotation);
+  return renderInvoiceQuotationModern(d, doc, company, extra, logoBuf, signatureBuf, headerOffset, cur, isQuotation);
 }
 
 // ======================== MODERN (default) ========================
-function renderInvoiceQuotationModern(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, headerOffset: number, cur: string, isQuotation: boolean) {
+function renderInvoiceQuotationModern(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, signatureBuf: Buffer | null, headerOffset: number, cur: string, isQuotation: boolean) {
   // === HEADER ===
   const headerTop = 10 + headerOffset;
   const rightX = 320;
@@ -452,7 +468,7 @@ function renderInvoiceQuotationModern(d: PDFKit.PDFDocument, doc: any, company: 
     footY = d.y + 10;
   }
 
-  if (!isQuotation) footY = drawInvoiceSignatures(d, footY + 10);
+  if (!isQuotation) footY = drawInvoiceSignatures(d, footY + 10, signatureBuf);
 
   // === FOOTER ===
   footY += 10;
@@ -463,7 +479,7 @@ function renderInvoiceQuotationModern(d: PDFKit.PDFDocument, doc: any, company: 
 }
 
 // ======================== CLASSIC ========================
-function renderInvoiceQuotationClassic(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, headerOffset: number, cur: string, isQuotation: boolean) {
+function renderInvoiceQuotationClassic(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, signatureBuf: Buffer | null, headerOffset: number, cur: string, isQuotation: boolean) {
   const headerTop = 10 + headerOffset;
   const rightX = 320;
 
@@ -588,7 +604,7 @@ function renderInvoiceQuotationClassic(d: PDFKit.PDFDocument, doc: any, company:
     footY = d.y + 10;
   }
 
-  if (!isQuotation) footY = drawInvoiceSignatures(d, footY + 10);
+  if (!isQuotation) footY = drawInvoiceSignatures(d, footY + 10, signatureBuf);
 
   footY += 10;
   d.fontSize(7).fillColor("#888").text(
@@ -598,7 +614,7 @@ function renderInvoiceQuotationClassic(d: PDFKit.PDFDocument, doc: any, company:
 }
 
 // ======================== MINIMAL ========================
-function renderInvoiceQuotationMinimal(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, headerOffset: number, cur: string, isQuotation: boolean) {
+function renderInvoiceQuotationMinimal(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, signatureBuf: Buffer | null, headerOffset: number, cur: string, isQuotation: boolean) {
   const headerTop = 10 + headerOffset;
   const rightX = 320;
 
@@ -714,7 +730,7 @@ function renderInvoiceQuotationMinimal(d: PDFKit.PDFDocument, doc: any, company:
     footY = d.y + 10;
   }
 
-  if (!isQuotation) footY = drawInvoiceSignatures(d, footY + 10);
+  if (!isQuotation) footY = drawInvoiceSignatures(d, footY + 10, signatureBuf);
 
   footY += 10;
   d.fontSize(7).fillColor("#bbb").text(
@@ -724,7 +740,7 @@ function renderInvoiceQuotationMinimal(d: PDFKit.PDFDocument, doc: any, company:
 }
 
 // ======================== ELEGANT (CSS styling from quotation.html only) ========================
-function renderInvoiceQuotationElegant(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, headerOffset: number, cur: string, isQuotation: boolean) {
+function renderInvoiceQuotationElegant(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, signatureBuf: Buffer | null, headerOffset: number, cur: string, isQuotation: boolean) {
   const GREEN = "#2d6e3e";
   const GREEN_SOFT_2 = "#eef4ef";
   const BLACK = "#111111";
@@ -861,7 +877,7 @@ function renderInvoiceQuotationElegant(d: PDFKit.PDFDocument, doc: any, company:
     footY = d.y + 12;
   }
 
-  if (!isQuotation) footY = drawInvoiceSignatures(d, footY + 10);
+  if (!isQuotation) footY = drawInvoiceSignatures(d, footY + 10, signatureBuf);
 
   // === FOOTER ===
   footY += 8;
