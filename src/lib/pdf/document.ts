@@ -343,7 +343,8 @@ function renderInvoiceQuotationModern(d: PDFKit.PDFDocument, doc: any, company: 
 
   for (let i = 0; i < doc.items.length; i++) {
     const it = doc.items[i];
-    const descH = d.heightOfString(String(it.description), { width: cols.desc.w - 8 });
+    d.font("Helvetica").fontSize(10);
+    const descH = d.heightOfString(String(it.description || ""), { width: cols.desc.w - 8 });
     const rowH = Math.max(descH, 14) + 14;
 
     // Alternating row background
@@ -353,7 +354,7 @@ function renderInvoiceQuotationModern(d: PDFKit.PDFDocument, doc: any, company: 
 
     d.font("Helvetica").fontSize(10).fillColor("#111");
     // Description
-    d.text(String(it.description), cols.desc.x + 8, rowY + 7, { width: cols.desc.w - 8 });
+    d.text(String(it.description || ""), cols.desc.x + 8, rowY + 7, { width: cols.desc.w - 8 });
     // Qty
     d.text(String(it.quantity), cols.qty.x, rowY + 7, { width: cols.qty.w, align: "center" });
     // Unit price
@@ -488,14 +489,15 @@ function renderInvoiceQuotationClassic(d: PDFKit.PDFDocument, doc: any, company:
 
   for (let i = 0; i < doc.items.length; i++) {
     const it = doc.items[i];
-    const descH = d.heightOfString(String(it.description), { width: cols.desc.w });
-    const rowH = Math.max(descH, 14) + 12;
+    d.font("Helvetica").fontSize(10);
+    const descH = d.heightOfString(String(it.description || ""), { width: cols.desc.w - 8 });
+    const rowH = Math.max(descH, 14) + 14;
 
     d.font("Helvetica").fontSize(10).fillColor("#111");
-    d.text(String(it.description), cols.desc.x, rowY + 6, { width: cols.desc.w });
-    d.text(String(it.quantity), cols.qty.x, rowY + 6, { width: cols.qty.w, align: "center" });
-    d.text(money(it.unitPrice, cur), cols.price.x, rowY + 6, { width: cols.price.w - 6, align: "right" });
-    d.text(money(it.amount, cur), cols.amt.x, rowY + 6, { width: cols.amt.w - 6, align: "right" });
+    d.text(String(it.description || ""), cols.desc.x, rowY + 7, { width: cols.desc.w - 8 });
+    d.text(String(it.quantity), cols.qty.x, rowY + 7, { width: cols.qty.w, align: "center" });
+    d.text(money(it.unitPrice, cur), cols.price.x, rowY + 7, { width: cols.price.w - 6, align: "right" });
+    d.text(money(it.amount, cur), cols.amt.x, rowY + 7, { width: cols.amt.w - 6, align: "right" });
 
     rowY += rowH;
     d.moveTo(40, rowY).lineTo(555, rowY).strokeColor("#ddd").lineWidth(0.3).stroke();
@@ -617,18 +619,19 @@ function renderInvoiceQuotationMinimal(d: PDFKit.PDFDocument, doc: any, company:
 
   for (let i = 0; i < doc.items.length; i++) {
     const it = doc.items[i];
-    const descH = d.heightOfString(String(it.description), { width: cols.desc.w });
-    const rowH = Math.max(descH, 14) + 14;
+    d.font("Helvetica").fontSize(10);
+    const descH = d.heightOfString(String(it.description || ""), { width: cols.desc.w - 8 });
+    const rowH = Math.max(descH, 14) + 16;
 
     d.font("Helvetica").fontSize(10).fillColor("#111");
-    d.text(String(it.description), cols.desc.x, rowY, { width: cols.desc.w });
+    d.text(String(it.description || ""), cols.desc.x, rowY, { width: cols.desc.w - 8 });
     d.text(String(it.quantity), cols.qty.x, rowY, { width: cols.qty.w, align: "center" });
     d.text(money(it.unitPrice, cur), cols.price.x, rowY, { width: cols.price.w - 6, align: "right" });
     d.text(money(it.amount, cur), cols.amt.x, rowY, { width: cols.amt.w - 6, align: "right" });
 
     rowY += rowH;
     if (i < doc.items.length - 1) {
-      d.moveTo(40, rowY - 4).lineTo(555, rowY - 4).strokeColor("#eee").lineWidth(0.3).stroke();
+      d.moveTo(40, rowY - 6).lineTo(555, rowY - 6).strokeColor("#eee").lineWidth(0.3).stroke();
     }
   }
   d.moveTo(40, rowY).lineTo(555, rowY).strokeColor("#111").lineWidth(0.6).stroke();
@@ -758,16 +761,19 @@ function renderInvoiceQuotationElegant(d: PDFKit.PDFDocument, doc: any, company:
 
   let rowY = tableTop + headerH;
 
+  // Set body font BEFORE measuring so heightOfString uses the right metrics
+  d.font("Helvetica").fontSize(11).fillColor(TEXT);
+
   for (let i = 0; i < doc.items.length; i++) {
     const it = doc.items[i];
-    const descH = d.heightOfString(String(it.description), { width: cols.desc.w - 24 });
-    const rowH = Math.max(descH, 14) + 12;
+    const descH = d.heightOfString(String(it.description || ""), { width: cols.desc.w - 24 });
+    const rowH = Math.max(descH, 14) + 14;
 
     d.font("Helvetica").fontSize(11).fillColor(TEXT);
-    d.text(String(it.description), cols.desc.x + 12, rowY + 6, { width: cols.desc.w - 24 });
-    d.text(String(it.quantity), cols.qty.x, rowY + 6, { width: cols.qty.w, align: "right" });
-    d.text(money(it.unitPrice, cur), cols.price.x, rowY + 6, { width: cols.price.w - 6, align: "right" });
-    d.text(money(it.amount, cur), cols.amt.x, rowY + 6, { width: cols.amt.w - 12, align: "right" });
+    d.text(String(it.description || ""), cols.desc.x + 12, rowY + 7, { width: cols.desc.w - 24 });
+    d.text(String(it.quantity), cols.qty.x, rowY + 7, { width: cols.qty.w, align: "right" });
+    d.text(money(it.unitPrice, cur), cols.price.x, rowY + 7, { width: cols.price.w - 6, align: "right" });
+    d.text(money(it.amount, cur), cols.amt.x, rowY + 7, { width: cols.amt.w - 12, align: "right" });
 
     rowY += rowH;
     d.moveTo(40, rowY).lineTo(555, rowY).strokeColor(LINE).lineWidth(0.5).stroke();
