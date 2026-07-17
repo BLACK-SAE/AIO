@@ -127,7 +127,7 @@ export async function renderDocumentPdf(doc: any, company: any): Promise<Buffer>
       }
 
       if (isWaybill) {
-        renderWaybillPdf(d, doc, company, extra, logoBuf, headerOffset);
+        renderWaybillPdf(d, doc, company, extra, logoBuf, signatureBuf, headerOffset);
       } else if (doc.type === "LETTER") {
         renderLetterPdf(d, doc, company, extra, logoBuf, signatureBuf, headerOffset);
       } else {
@@ -139,7 +139,7 @@ export async function renderDocumentPdf(doc: any, company: any): Promise<Buffer>
   });
 }
 
-function renderWaybillPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, headerOffset: number) {
+function renderWaybillPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: any, logoBuf: Buffer | null, signatureBuf: Buffer | null, headerOffset: number) {
   const pageLeft = 40;
   const pageRight = 555;
   const pageW = pageRight - pageLeft;
@@ -303,6 +303,16 @@ function renderWaybillPdf(d: PDFKit.PDFDocument, doc: any, company: any, extra: 
 
     // Signature line
     const sigLineY = footY + sigBlockH - 22;
+
+    // Drop the uploaded signature image above the "DISPATCHED BY" line (represents the company/authorized signer)
+    if (i === 0 && signatureBuf) {
+      try {
+        const maxW = Math.min(sigColW - 12, 110);
+        const maxH = 26;
+        d.image(signatureBuf, x + 6, sigLineY - maxH - 2, { fit: [maxW, maxH] });
+      } catch {}
+    }
+
     d.moveTo(x + 6, sigLineY).lineTo(x + sigColW - 6, sigLineY).strokeColor("#999").lineWidth(0.5).stroke();
     d.fontSize(7).font("Helvetica").fillColor("#999").text("Name / Signature / Date", x + 6, sigLineY + 3, { width: sigColW - 12 });
   });
@@ -468,7 +478,7 @@ function renderInvoiceQuotationModern(d: PDFKit.PDFDocument, doc: any, company: 
     footY = d.y + 10;
   }
 
-  if (!isQuotation) footY = drawInvoiceSignatures(d, footY + 10, signatureBuf);
+  footY = drawInvoiceSignatures(d, footY + 10, signatureBuf);
 
   // === FOOTER ===
   footY += 10;
@@ -604,7 +614,7 @@ function renderInvoiceQuotationClassic(d: PDFKit.PDFDocument, doc: any, company:
     footY = d.y + 10;
   }
 
-  if (!isQuotation) footY = drawInvoiceSignatures(d, footY + 10, signatureBuf);
+  footY = drawInvoiceSignatures(d, footY + 10, signatureBuf);
 
   footY += 10;
   d.fontSize(7).fillColor("#888").text(
@@ -730,7 +740,7 @@ function renderInvoiceQuotationMinimal(d: PDFKit.PDFDocument, doc: any, company:
     footY = d.y + 10;
   }
 
-  if (!isQuotation) footY = drawInvoiceSignatures(d, footY + 10, signatureBuf);
+  footY = drawInvoiceSignatures(d, footY + 10, signatureBuf);
 
   footY += 10;
   d.fontSize(7).fillColor("#bbb").text(
@@ -858,8 +868,8 @@ function renderInvoiceQuotationElegant(d: PDFKit.PDFDocument, doc: any, company:
   const totalH = 30;
   d.rect(40, totalRowY, 515, totalH).fillColor(BLACK).fill();
   d.fillColor("#ffffff").font("Helvetica-Bold").fontSize(11);
-  d.text(`TOTAL ${TITLES[doc.type]} VALUE`, 56, totalRowY + 10, { width: 360, characterSpacing: 1.4 });
-  d.fontSize(14).text(money(doc.total, cur), 460, totalRowY + 8, { width: 95, align: "right" });
+  d.text(`TOTAL ${TITLES[doc.type]} VALUE`, 56, totalRowY + 10, { width: 260, characterSpacing: 1.4 });
+  d.fontSize(14).text(money(doc.total, cur), 335, totalRowY + 8, { width: 210, align: "right", lineBreak: false });
   d.fillColor(BLACK);
   rowY = totalRowY + totalH;
 
@@ -877,7 +887,7 @@ function renderInvoiceQuotationElegant(d: PDFKit.PDFDocument, doc: any, company:
     footY = d.y + 12;
   }
 
-  if (!isQuotation) footY = drawInvoiceSignatures(d, footY + 10, signatureBuf);
+  footY = drawInvoiceSignatures(d, footY + 10, signatureBuf);
 
   // === FOOTER ===
   footY += 8;
